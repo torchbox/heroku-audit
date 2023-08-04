@@ -5,6 +5,7 @@ from rich.progress import track
 from concurrent.futures import ThreadPoolExecutor
 from heroku_audit.format import display_data, FormatOption, Format
 from heroku3.models.addon import Addon
+from heroku3.models.app import App
 
 app = typer.Typer()
 
@@ -34,6 +35,10 @@ def get_addon_plan(addon: Addon):
     return addon.plan.name.removeprefix(HEROKU_POSTGRES)
 
 
+def get_apps_for_teams(team):
+    return heroku._get_resources(("teams", team, "apps"), App)
+
+
 def get_version_column(addon: Addon):
     return {
         "App": addon.app.name,
@@ -49,13 +54,16 @@ def version(
         Optional[int],
         typer.Argument(help="Version to look for"),
     ] = None,
+    team: Annotated[
+        Optional[str], typer.Option(help="Limit options to the given team")
+    ] = None,
     format: FormatOption = Format.TABLE,
 ):
     """
     Audit the available postgres database versions
     """
     with ThreadPoolExecutor() as executor:
-        apps = heroku.apps()
+        apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
         collected_addons = []
         for addons in track(
@@ -86,13 +94,16 @@ def plan(
         Optional[str],
         typer.Argument(help="Plan to look for"),
     ] = None,
+    team: Annotated[
+        Optional[str], typer.Option(help="Limit options to the given team")
+    ] = None,
     format: FormatOption = Format.TABLE,
 ):
     # HACK: https://github.com/martyzz1/heroku3.py/pull/132
     Addon._strs.append("config_vars")
 
     with ThreadPoolExecutor() as executor:
-        apps = heroku.apps()
+        apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
         collected_addons = []
         for addons in track(
