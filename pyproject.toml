@@ -1,0 +1,25 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "heroku_audit"
+version = "0.0.0"
+description = ""
+authors = [
+    {name = "Jake Howard", email = "jake.howard@torchbox.com"},
+]
+readme = "README.md"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "heroku3",
+    "typer",
+    "rich"
+]
+
+[project.scripts]
+heroku_audit = "heroku_audit.cli:app"
