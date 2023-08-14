@@ -135,3 +135,54 @@ def plan(
         ),
         format,
     )
+
+
+@app.command()
+def count(
+    count: Annotated[
+        int,
+        typer.Argument(
+            help="Acceptable number of addons (greater than this will be shown)"
+        ),
+    ] = 0,
+    team: Annotated[
+        Optional[str], typer.Option(help="Limit options to the given team")
+    ] = None,
+    format: FormatOption = Format.TABLE,
+):
+    """
+    Find addons with a given number of databases
+    """
+    # HACK: https://github.com/martyzz1/heroku3.py/pull/132
+    Addon._strs.append("config_vars")
+
+    with ThreadPoolExecutor() as executor:
+        apps = heroku.apps() if team is None else get_apps_for_teams(team)
+
+        app_to_addons = {}
+
+        for app, addons in track(
+            executor.map(lambda a: (a, a.addons()), apps),
+            description="Loading addons...",
+            total=len(apps),
+        ):
+            app_to_addons[app] = [
+                addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
+            ]
+
+    display_data(
+        sorted(
+            (
+                {
+                    "App": app.name,
+                    "Databases": len(addons),
+                    "Addon Names": ", ".join(sorted([a.name for a in addons])),
+                }
+                for app, addons in app_to_addons.items()
+                if len(addons) >= count
+            ),
+            key=lambda r: r["Databases"],
+            reverse=True,
+        ),
+        format,
+    )
