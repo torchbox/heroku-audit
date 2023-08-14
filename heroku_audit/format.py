@@ -25,7 +25,7 @@ def display_data(data: list[dict], format: Format):
         headers = data[0].keys()
         table = Table(*headers)
         for row in data:
-            table.add_row(*row.values())
+            table.add_row(*[str(c) for c in row.values()])
         Console().print(table)
 
     elif format == Format.CSV:
