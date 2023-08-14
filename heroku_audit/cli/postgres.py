@@ -12,15 +12,18 @@ app = typer.Typer()
 HEROKU_POSTGRES = "heroku-postgresql:"
 
 
+def get_postgres_api_hostname(addon: Addon) -> str:
+    if any(x in addon.plan.name for x in ["dev", "basic", "mini"]):
+        return "postgres-starter-api.heroku.com"
+    return "postgres-api.heroku.com"
+
+
 class HerokuPostgresDetails(TypedDict):
     postgres_version: str
 
 
-def get_heroku_postgres_details(addon) -> HerokuPostgresDetails:
-    if any(x in addon.plan.name for x in ["dev", "basic", "mini"]):
-        host = "postgres-starter-api.heroku.com"
-    else:
-        host = "postgres-api.heroku.com"
+def get_heroku_postgres_details(addon: Addon) -> HerokuPostgresDetails:
+    host = get_postgres_api_hostname(addon)
     response = heroku._session.get(f"https://{host}/client/v11/databases/{addon.id}")
     response.raise_for_status()
     data = response.json()
@@ -29,6 +32,17 @@ def get_heroku_postgres_details(addon) -> HerokuPostgresDetails:
     data["info"] = {i["name"]: i["values"] for i in data["info"]}
 
     return {"postgres_version": data["info"]["PG Version"][0]}
+
+
+def get_heroku_postgres_backup_schedules(addon: Addon) -> HerokuPostgresDetails:
+    host = get_postgres_api_hostname(addon)
+    response = heroku._session.get(
+        f"https://{host}/client/v11/databases/{addon.id}/transfer-schedules"
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    return [f"Daily at {s['hour']}:00 {s['timezone']}" for s in data]
 
 
 def get_addon_plan(addon: Addon):
@@ -45,6 +59,15 @@ def get_version_column(addon: Addon):
         "Addon": addon.name,
         "Plan": get_addon_plan(addon),
         "Version": get_heroku_postgres_details(addon)["postgres_version"],
+    }
+
+
+def get_backup_column(addon: Addon):
+    return {
+        "App": addon.app.name,
+        "Addon": addon.name,
+        "Plan": get_addon_plan(addon),
+        "Schedule": ", ".join(get_heroku_postgres_backup_schedules(addon)),
     }
 
 
@@ -186,3 +209,44 @@ def count(
         ),
         format,
     )
+
+
+@app.command()
+def backup_schedule(
+    team: Annotated[
+        Optional[str], typer.Option(help="Limit options to the given team")
+    ] = None,
+    missing: Annotated[
+        Optional[bool],
+        typer.Option(help="Only show databases without backup schedules"),
+    ] = False,
+    format: FormatOption = Format.TABLE,
+):
+    """
+    Find backup schedules for databases
+    """
+
+    with ThreadPoolExecutor() as executor:
+        apps = heroku.apps() if team is None else get_apps_for_teams(team)
+
+        collected_addons = []
+        for addons in track(
+            executor.map(lambda a: a.addons(), apps),
+            description="Loading addons...",
+            total=len(apps),
+        ):
+            collected_addons.extend(
+                addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
+            )
+
+        results = []
+        for result in track(
+            executor.map(get_backup_column, collected_addons),
+            description="Probing databases...",
+            total=len(collected_addons),
+        ):
+            if missing and result["Schedule"]:
+                continue
+            results.append(result)
+
+    display_data(sorted(results, key=lambda r: r["App"]), format)
