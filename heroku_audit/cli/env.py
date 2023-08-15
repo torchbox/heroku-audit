@@ -17,10 +17,10 @@ app = typer.Typer(name="env", help="Report on Environment variables.")
 @app.command()
 def value_of(
     key: Annotated[str, typer.Argument(help="Variable to audit")],
-    unset_only: Annotated[
+    unset: Annotated[
         Optional[bool],
         typer.Option(help="Only show apps with the variable missing"),
-    ] = False,
+    ] = None,
     team: TeamOption = None,
     format: FormatOption = Format.TABLE,
 ):
@@ -37,7 +37,9 @@ def value_of(
         ):
             value = config_vars.to_dict().get(key)
 
-            if value is not None and unset_only:
+            if unset and value is not None:
+                continue
+            elif unset is False and value is None:
                 continue
 
             app_values[app] = value if value is not None else Text("UNSET", style="red")

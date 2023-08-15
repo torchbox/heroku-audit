@@ -7,6 +7,7 @@ from heroku_audit.format import display_data, FormatOption, Format
 from heroku3.models.addon import Addon
 from heroku_audit.utils import get_apps_for_teams
 from heroku_audit.options import TeamOption
+from rich.text import Text
 
 app = typer.Typer(name="postgres", help="Report on Heroku Postgres databases.")
 
@@ -60,11 +61,15 @@ def get_version_column(addon: Addon):
 
 
 def get_backup_column(addon: Addon):
+    backup_schedules = get_heroku_postgres_backup_schedules(addon)
+
     return {
         "App": addon.app.name,
         "Addon": addon.name,
         "Plan": get_addon_plan(addon),
-        "Schedule": ", ".join(get_heroku_postgres_backup_schedules(addon)),
+        "Schedule": ", ".join(backup_schedules)
+        if backup_schedules
+        else Text("NONE", style="red"),
     }
 
 
@@ -72,7 +77,7 @@ def get_backup_column(addon: Addon):
 def major_version(
     target: Annotated[
         Optional[int],
-        typer.Argument(help="Version to look for"),
+        typer.Option(help="Version to look for"),
     ] = None,
     team: TeamOption = None,
     format: FormatOption = Format.TABLE,
@@ -108,7 +113,7 @@ def major_version(
 
 @app.command()
 def plan(
-    target: Annotated[
+    plan: Annotated[
         Optional[str],
         typer.Argument(help="Plan to look for"),
     ] = None,
@@ -131,9 +136,9 @@ def plan(
                 addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
             )
 
-    if target:
+    if plan:
         collected_addons = [
-            addon for addon in collected_addons if get_addon_plan(addon) == target
+            addon for addon in collected_addons if get_addon_plan(addon) == plan
         ]
 
     display_data(
@@ -155,17 +160,18 @@ def plan(
 
 @app.command()
 def count(
-    count: Annotated[
+    minimum: Annotated[
         int,
-        typer.Argument(
-            help="Acceptable number of addons (greater than this will be shown)"
+        typer.Option(
+            "--min",
+            help="Acceptable number of databases (greater than this will be shown)",
         ),
-    ] = 0,
+    ] = 1,
     team: TeamOption = None,
     format: FormatOption = Format.TABLE,
 ):
     """
-    Find addons with a given number of databases
+    Find apps with a given number of databases
     """
     # HACK: https://github.com/martyzz1/heroku3.py/pull/132
     Addon._strs.append("config_vars")
@@ -193,7 +199,7 @@ def count(
                     "Addon Names": ", ".join(sorted([a.name for a in addons])),
                 }
                 for app, addons in app_to_addons.items()
-                if len(addons) >= count
+                if len(addons) >= minimum
             ),
             key=lambda r: r["Databases"],
             reverse=True,
@@ -205,7 +211,7 @@ def count(
 @app.command()
 def backup_schedule(
     team: TeamOption = None,
-    missing: Annotated[
+    missing_only: Annotated[
         Optional[bool],
         typer.Option(help="Only show databases without backup schedules"),
     ] = False,
@@ -234,7 +240,7 @@ def backup_schedule(
             description="Probing databases...",
             total=len(collected_addons),
         ):
-            if missing and result["Schedule"]:
+            if missing_only and result["Schedule"]:
                 continue
             results.append(result)
 
