@@ -6,6 +6,7 @@ from enum import StrEnum
 import typer
 import json
 from io import StringIO
+from rich.protocol import is_renderable
 
 
 class Format(StrEnum):
@@ -25,7 +26,8 @@ def display_data(data: list[dict], format: Format):
         headers = data[0].keys()
         table = Table(*headers)
         for row in data:
-            table.add_row(*[str(c) for c in row.values()])
+            values = [v if is_renderable(v) else str(v) for v in row.values()]
+            table.add_row(*values)
         Console().print(table)
 
     elif format == Format.CSV:

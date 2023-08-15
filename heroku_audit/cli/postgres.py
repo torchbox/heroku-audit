@@ -5,7 +5,7 @@ from rich.progress import track
 from concurrent.futures import ThreadPoolExecutor
 from heroku_audit.format import display_data, FormatOption, Format
 from heroku3.models.addon import Addon
-from heroku3.models.app import App
+from heroku_audit.utils import get_apps_for_teams
 
 app = typer.Typer()
 
@@ -47,10 +47,6 @@ def get_heroku_postgres_backup_schedules(addon: Addon) -> HerokuPostgresDetails:
 
 def get_addon_plan(addon: Addon):
     return addon.plan.name.removeprefix(HEROKU_POSTGRES)
-
-
-def get_apps_for_teams(team):
-    return heroku._get_resources(("teams", team, "apps"), App)
 
 
 def get_version_column(addon: Addon):
