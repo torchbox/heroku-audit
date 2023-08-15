@@ -69,7 +69,7 @@ def get_backup_column(addon: Addon):
 
 
 @app.command()
-def version(
+def major_version(
     target: Annotated[
         Optional[int],
         typer.Argument(help="Version to look for"),
