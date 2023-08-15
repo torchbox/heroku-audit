@@ -9,6 +9,7 @@ from rich.text import Text
 from collections import defaultdict
 import fnmatch
 import re
+from heroku_audit.options import TeamOption
 
 app = typer.Typer()
 
@@ -20,9 +21,7 @@ def value_of(
         Optional[bool],
         typer.Option(help="Only show apps with the variable missing"),
     ] = False,
-    team: Annotated[
-        Optional[str], typer.Option(help="Limit options to the given team")
-    ] = None,
+    team: TeamOption = None,
     format: FormatOption = Format.TABLE,
 ):
     """ """
@@ -57,9 +56,7 @@ def contains(
     target: Annotated[
         str, typer.Argument(help="Value to search for. Glob syntax is supported.")
     ],
-    team: Annotated[
-        Optional[str], typer.Option(help="Limit options to the given team")
-    ] = None,
+    team: TeamOption = None,
     format: FormatOption = Format.TABLE,
 ):
     """

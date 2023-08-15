@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from heroku_audit.format import display_data, FormatOption, Format
 from heroku3.models.addon import Addon
 from heroku_audit.utils import get_apps_for_teams
+from heroku_audit.options import TeamOption
 
 app = typer.Typer()
 
@@ -73,9 +74,7 @@ def version(
         Optional[int],
         typer.Argument(help="Version to look for"),
     ] = None,
-    team: Annotated[
-        Optional[str], typer.Option(help="Limit options to the given team")
-    ] = None,
+    team: TeamOption = None,
     format: FormatOption = Format.TABLE,
 ):
     """
@@ -113,9 +112,7 @@ def plan(
         Optional[str],
         typer.Argument(help="Plan to look for"),
     ] = None,
-    team: Annotated[
-        Optional[str], typer.Option(help="Limit options to the given team")
-    ] = None,
+    team: TeamOption = None,
     format: FormatOption = Format.TABLE,
 ):
     # HACK: https://github.com/martyzz1/heroku3.py/pull/132
@@ -164,9 +161,7 @@ def count(
             help="Acceptable number of addons (greater than this will be shown)"
         ),
     ] = 0,
-    team: Annotated[
-        Optional[str], typer.Option(help="Limit options to the given team")
-    ] = None,
+    team: TeamOption = None,
     format: FormatOption = Format.TABLE,
 ):
     """
@@ -209,9 +204,7 @@ def count(
 
 @app.command()
 def backup_schedule(
-    team: Annotated[
-        Optional[str], typer.Option(help="Limit options to the given team")
-    ] = None,
+    team: TeamOption = None,
     missing: Annotated[
         Optional[bool],
         typer.Option(help="Only show databases without backup schedules"),
