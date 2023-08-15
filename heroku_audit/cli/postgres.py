@@ -8,7 +8,7 @@ from heroku3.models.addon import Addon
 from heroku_audit.utils import get_apps_for_teams
 from heroku_audit.options import TeamOption
 
-app = typer.Typer()
+app = typer.Typer(name="postgres", help="Report on Heroku Postgres databases.")
 
 HEROKU_POSTGRES = "heroku-postgresql:"
 

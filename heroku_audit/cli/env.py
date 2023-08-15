@@ -11,7 +11,7 @@ import fnmatch
 import re
 from heroku_audit.options import TeamOption
 
-app = typer.Typer()
+app = typer.Typer(name="env", help="Report on Environment variables.")
 
 
 @app.command()
