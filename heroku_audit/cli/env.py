@@ -24,7 +24,9 @@ def value_of(
     team: TeamOption = None,
     format: FormatOption = Format.TABLE,
 ):
-    """ """
+    """
+    Find the value of a given environment variable
+    """
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 

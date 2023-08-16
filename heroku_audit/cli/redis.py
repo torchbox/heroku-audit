@@ -105,6 +105,9 @@ def plan(
     team: TeamOption = None,
     format: FormatOption = Format.TABLE,
 ):
+    """
+    Find Redis instances with a given plan
+    """
     # HACK: https://github.com/martyzz1/heroku3.py/pull/132
     Addon._strs.append("config_vars")
 
