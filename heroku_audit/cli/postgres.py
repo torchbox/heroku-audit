@@ -240,7 +240,7 @@ def backup_schedule(
             description="Probing databases...",
             total=len(collected_addons),
         ):
-            if missing_only and result["Schedule"]:
+            if missing_only and str(result["Schedule"]) != "NONE":
                 continue
             results.append(result)
 
