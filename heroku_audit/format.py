@@ -9,6 +9,18 @@ from io import StringIO
 from rich.protocol import is_renderable
 
 
+class RichJSONEncoder(json.JSONEncoder):
+    """
+    A custom JSON encoder which handles `rich` datatypes
+    """
+
+    def default(self, o):
+        if is_renderable(o):
+            return str(o)
+
+        return super().default(o)
+
+
 class Format(StrEnum):
     TABLE = "table"
     CSV = "csv"
@@ -40,4 +52,4 @@ def display_data(data: list[dict], format: Format):
         print(output.getvalue())
 
     elif format == Format.JSON:
-        print(json.dumps(data))
+        print(json.dumps(data, cls=RichJSONEncoder))
