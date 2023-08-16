@@ -1,6 +1,6 @@
 import typer
 
-from . import apps, env, postgres
+from . import apps, env, postgres, redis
 from typing import Annotated, Optional
 from heroku_audit import __version__
 
@@ -10,6 +10,7 @@ app = typer.Typer(help="Heroku audit tool")
 app.add_typer(apps.app)
 app.add_typer(env.app)
 app.add_typer(postgres.app)
+app.add_typer(redis.app)
 
 
 def version_callback(version: bool):

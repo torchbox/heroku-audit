@@ -1,71 +1,58 @@
 import typer
-from heroku_audit.client import heroku
-from typing import Optional, Annotated, TypedDict
-from rich.progress import track
-from concurrent.futures import ThreadPoolExecutor
-from heroku_audit.format import display_data, FormatOption, Format
-from heroku3.models.addon import Addon
-from heroku_audit.utils import get_apps_for_teams, SHOW_PROGRESS, get_addon_plan
 from heroku_audit.options import TeamOption
-from rich.text import Text
-
-app = typer.Typer(name="postgres", help="Report on Heroku Postgres databases.")
-
-HEROKU_POSTGRES = "heroku-postgresql:"
-
-
-def get_postgres_api_hostname(addon: Addon) -> str:
-    if any(x in addon.plan.name for x in ["dev", "basic", "mini"]):
-        return "postgres-starter-api.heroku.com"
-    return "postgres-api.heroku.com"
+from heroku_audit.utils import get_apps_for_teams, SHOW_PROGRESS, get_addon_plan
+from heroku_audit.format import FormatOption, display_data, Format
+from concurrent.futures import ThreadPoolExecutor
+from heroku_audit.client import heroku
+from typing import Annotated, Optional, TypedDict
+from heroku3.models.addon import Addon
+from rich.progress import track
 
 
-class HerokuPostgresDetails(TypedDict):
-    postgres_version: str
+app = typer.Typer(name="redis", help="Report on Heroku Data for Redis.")
+
+HEROKU_REDIS = "heroku-redis:"
 
 
-def get_heroku_postgres_details(addon: Addon) -> HerokuPostgresDetails:
-    host = get_postgres_api_hostname(addon)
-    response = heroku._session.get(f"https://{host}/client/v11/databases/{addon.id}")
+class HerokuRedisDetails(TypedDict):
+    version: str
+    maxmemory_policy: str
+
+
+def get_heroku_redis_details(addon: Addon) -> dict:
+    response = heroku._session.get(
+        f"https://redis-api.heroku.com/redis/v0/databases/{addon.id}"
+    )
     response.raise_for_status()
     data = response.json()
 
     # Reshape for easier parsing
     data["info"] = {i["name"]: i["values"] for i in data["info"]}
 
-    return {"postgres_version": data["info"]["PG Version"][0]}
-
-
-def get_heroku_postgres_backup_schedules(addon: Addon) -> HerokuPostgresDetails:
-    host = get_postgres_api_hostname(addon)
-    response = heroku._session.get(
-        f"https://{host}/client/v11/databases/{addon.id}/transfer-schedules"
-    )
-    response.raise_for_status()
-    data = response.json()
-
-    return [f"Daily at {s['hour']}:00 {s['timezone']}" for s in data]
-
-
-def get_version_column(addon: Addon):
     return {
-        "App": addon.app.name,
-        "Addon": addon.name,
-        "Plan": get_addon_plan(addon),
-        "Version": get_heroku_postgres_details(addon)["postgres_version"],
+        "version": data["info"]["Version"][0],
+        "maxmemory_policy": data["info"]["Maxmemory"][0],
     }
 
 
-def get_backup_column(addon: Addon):
-    backup_schedules = get_heroku_postgres_backup_schedules(addon)
-
+def get_version_column(addon: Addon):
+    details = get_heroku_redis_details(addon)
     return {
         "App": addon.app.name,
         "Addon": addon.name,
         "Plan": get_addon_plan(addon),
-        "Schedule": ", ".join(backup_schedules)
-        if backup_schedules
-        else Text("NONE", style="red"),
+        "Version": details["version"],
+        "Max Memory Policy": details["maxmemory_policy"],
+    }
+
+
+def get_maxmemory_policy_column(addon: Addon):
+    details = get_heroku_redis_details(addon)
+    return {
+        "App": addon.app.name,
+        "Addon": addon.name,
+        "Plan": get_addon_plan(addon),
+        "Policy": details["maxmemory_policy"],
     }
 
 
@@ -79,7 +66,7 @@ def major_version(
     format: FormatOption = Format.TABLE,
 ):
     """
-    Audit the available postgres database versions
+    Audit the available redis database versions
     """
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
@@ -92,7 +79,7 @@ def major_version(
             disable=not SHOW_PROGRESS,
         ):
             collected_addons.extend(
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
+                addon for addon in addons if addon.plan.name.startswith(HEROKU_REDIS)
             )
 
         results = []
@@ -132,7 +119,7 @@ def plan(
             disable=not SHOW_PROGRESS,
         ):
             collected_addons.extend(
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
+                addon for addon in addons if addon.plan.name.startswith(HEROKU_REDIS)
             )
 
     if plan:
@@ -163,14 +150,14 @@ def count(
         int,
         typer.Option(
             "--min",
-            help="Acceptable number of databases (greater than this will be shown)",
+            help="Acceptable number of instances (greater than this will be shown)",
         ),
     ] = 1,
     team: TeamOption = None,
     format: FormatOption = Format.TABLE,
 ):
     """
-    Find apps with a given number of databases
+    Find apps with a given number of instances
     """
     # HACK: https://github.com/martyzz1/heroku3.py/pull/132
     Addon._strs.append("config_vars")
@@ -187,7 +174,7 @@ def count(
             disable=not SHOW_PROGRESS,
         ):
             app_to_addons[app] = [
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
+                addon for addon in addons if addon.plan.name.startswith(HEROKU_REDIS)
             ]
 
     display_data(
@@ -195,13 +182,13 @@ def count(
             (
                 {
                     "App": app.name,
-                    "Databases": len(addons),
+                    "Instances": len(addons),
                     "Addon Names": ", ".join(sorted([a.name for a in addons])),
                 }
                 for app, addons in app_to_addons.items()
                 if len(addons) >= minimum
             ),
-            key=lambda r: r["Databases"],
+            key=lambda r: r["Instances"],
             reverse=True,
         ),
         format,
@@ -209,18 +196,17 @@ def count(
 
 
 @app.command()
-def backup_schedule(
+def maxmemory_policy(
+    policy: Annotated[
+        Optional[str],
+        typer.Argument(help="Policy to look for"),
+    ] = None,
     team: TeamOption = None,
-    missing_only: Annotated[
-        Optional[bool],
-        typer.Option(help="Only show databases without backup schedules"),
-    ] = False,
     format: FormatOption = Format.TABLE,
 ):
     """
-    Find backup schedules for databases
+    Audit the redis `maxmemory-policy`
     """
-
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
@@ -232,18 +218,18 @@ def backup_schedule(
             disable=not SHOW_PROGRESS,
         ):
             collected_addons.extend(
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
+                addon for addon in addons if addon.plan.name.startswith(HEROKU_REDIS)
             )
 
         results = []
         for result in track(
-            executor.map(get_backup_column, collected_addons),
+            executor.map(get_maxmemory_policy_column, collected_addons),
             description="Probing databases...",
             total=len(collected_addons),
             disable=not SHOW_PROGRESS,
         ):
-            if missing_only and str(result["Schedule"]) != "NONE":
+            if policy and result["Policy"] != policy:
                 continue
             results.append(result)
 
-    display_data(sorted(results, key=lambda r: r["App"]), format)
+    display_data(sorted(results, key=lambda r: r["Policy"]), format)
