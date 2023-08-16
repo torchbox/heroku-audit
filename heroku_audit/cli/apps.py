@@ -4,7 +4,7 @@ from typing import Annotated
 from rich.progress import track
 from concurrent.futures import ThreadPoolExecutor
 from heroku_audit.format import display_data, FormatOption, Format
-from heroku_audit.utils import get_apps_for_teams
+from heroku_audit.utils import get_apps_for_teams, SHOW_PROGRESS
 from rich.text import Text
 from heroku_audit.options import TeamOption
 
@@ -29,6 +29,7 @@ def formation(
             executor.map(lambda a: (a, a.process_formation()), apps),
             description="Loading formation...",
             total=len(apps),
+            disable=not SHOW_PROGRESS,
         ):
             target_formation = next(
                 (formation for formation in formations if formation.type == process),

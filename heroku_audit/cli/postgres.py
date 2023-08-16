@@ -5,7 +5,7 @@ from rich.progress import track
 from concurrent.futures import ThreadPoolExecutor
 from heroku_audit.format import display_data, FormatOption, Format
 from heroku3.models.addon import Addon
-from heroku_audit.utils import get_apps_for_teams
+from heroku_audit.utils import get_apps_for_teams, SHOW_PROGRESS
 from heroku_audit.options import TeamOption
 from rich.text import Text
 
@@ -93,6 +93,7 @@ def major_version(
             executor.map(lambda a: a.addons(), apps),
             description="Loading addons...",
             total=len(apps),
+            disable=not SHOW_PROGRESS,
         ):
             collected_addons.extend(
                 addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
@@ -103,6 +104,7 @@ def major_version(
             executor.map(get_version_column, collected_addons),
             description="Probing databases...",
             total=len(collected_addons),
+            disable=not SHOW_PROGRESS,
         ):
             if target and result["Version"].split(".", 1)[0] != str(target):
                 continue
@@ -131,6 +133,7 @@ def plan(
             executor.map(lambda a: a.addons(), apps),
             description="Loading addons...",
             total=len(apps),
+            disable=not SHOW_PROGRESS,
         ):
             collected_addons.extend(
                 addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
@@ -185,6 +188,7 @@ def count(
             executor.map(lambda a: (a, a.addons()), apps),
             description="Loading addons...",
             total=len(apps),
+            disable=not SHOW_PROGRESS,
         ):
             app_to_addons[app] = [
                 addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
@@ -229,6 +233,7 @@ def backup_schedule(
             executor.map(lambda a: a.addons(), apps),
             description="Loading addons...",
             total=len(apps),
+            disable=not SHOW_PROGRESS,
         ):
             collected_addons.extend(
                 addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
@@ -239,6 +244,7 @@ def backup_schedule(
             executor.map(get_backup_column, collected_addons),
             description="Probing databases...",
             total=len(collected_addons),
+            disable=not SHOW_PROGRESS,
         ):
             if missing_only and str(result["Schedule"]) != "NONE":
                 continue

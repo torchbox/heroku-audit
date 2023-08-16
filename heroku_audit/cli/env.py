@@ -4,7 +4,7 @@ from typing import Optional, Annotated
 from rich.progress import track
 from concurrent.futures import ThreadPoolExecutor
 from heroku_audit.format import display_data, FormatOption, Format
-from heroku_audit.utils import get_apps_for_teams
+from heroku_audit.utils import get_apps_for_teams, SHOW_PROGRESS
 from rich.text import Text
 from collections import defaultdict
 import fnmatch
@@ -34,6 +34,7 @@ def value_of(
             executor.map(lambda a: (a, a.config()), apps),
             description="Loading config...",
             total=len(apps),
+            disable=not SHOW_PROGRESS,
         ):
             value = config_vars.to_dict().get(key)
 
@@ -75,6 +76,7 @@ def contains(
             executor.map(lambda a: (a, a.config()), apps),
             description="Loading config...",
             total=len(apps),
+            disable=not SHOW_PROGRESS,
         ):
             for key, val in config_vars.to_dict().items():
                 if target_matcher.match(val):
