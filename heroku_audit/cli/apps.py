@@ -8,7 +8,7 @@ from heroku_audit.utils import get_apps_for_teams, SHOW_PROGRESS
 from rich.text import Text
 from heroku_audit.options import TeamOption
 
-app = typer.Typer(name="apps", help="Report on Environment variables.")
+app = typer.Typer(name="apps", help="Report on Heroku apps.")
 
 
 @app.command()

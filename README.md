@@ -1,1 +1,34 @@
 # Heroku-audit
+
+Command-line tool for reporting on specific attributes of a Heroku environment.
+
+## Components
+
+- Apps
+- Environment Variables
+- Heroku Postgres
+- Heroku Data for Redis
+
+## Installation
+
+- `pip install -e .`
+
+## Usage
+
+Note: See `heroku_audit --help` for further details.
+
+Authentication is handled through the `$HEROKU_API_KEY` environment variable, which must be set to a valid Heroku API key.
+
+Each components is its own sub-command, containing a number of pre-made reports. For example `heroku_audit redis maxmemory-policy noeviction` finds all Redis instances with a given [maxmemory-policy](https://devcenter.heroku.com/articles/heroku-redis#maxmemory-policy) ("noeviction" can be omitted to view all results).
+
+To audit for a single team, add `--team=<team>`.
+
+### Output Format
+
+By default, a pretty table is output, for easy consumption by humans. `--format` can be specified to all commands to change the format:
+
+- `table` (Default)
+- `csv`
+- `json`
+
+Progress output is automatically removed when running non-interactively.
