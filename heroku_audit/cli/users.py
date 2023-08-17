@@ -14,6 +14,8 @@ from heroku_audit.utils import SHOW_PROGRESS, get_apps_for_teams, zip_map
 
 app = typer.Typer(name="users", help="Report on Heroku users.")
 
+COLLABORATOR_ROLES = ["collaborator", None]
+
 
 def get_member_of_team(team_name: str, email: str) -> Optional[Collaborator]:
     return next(
@@ -22,7 +24,8 @@ def get_member_of_team(team_name: str, email: str) -> Optional[Collaborator]:
             for collaborator in heroku._get_resources(  # type:ignore[attr-defined]
                 ("teams", team_name, "members"), obj=Collaborator
             )
-            if collaborator.user.email == email and collaborator.role != "collaborator"
+            if collaborator.user.email == email
+            and collaborator.role not in COLLABORATOR_ROLES
         ),
         None,
     )
@@ -81,6 +84,7 @@ def access(
             (
                 {
                     "App": app.name,
+                    "Team": app.team.name,
                     "Date Given": collaborator.created_at.date().isoformat(),
                     "Role": style_user_role(collaborator.role),
                 }

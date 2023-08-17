@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from rich.console import RenderableType
 from rich.text import Text
@@ -7,11 +7,13 @@ if TYPE_CHECKING:
     from heroku_audit.cli.postgres import HerokuBackupSchedule
 
 
-def style_user_role(role: str) -> RenderableType:
+def style_user_role(role: Optional[str]) -> RenderableType:
     if role == "admin":
         return Text(role, style="red")
     elif role == "member":
         return Text(role, style="purple")
+    elif role is None:
+        return "collaborator"
     return role
 
 

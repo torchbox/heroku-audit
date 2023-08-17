@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 from . import User
 
@@ -7,4 +8,4 @@ class Collaborator:
     user: User
 
     # HACK: https://github.com/martyzz1/heroku3.py/pull/133
-    role: str
+    role: Optional[str]
