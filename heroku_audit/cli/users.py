@@ -94,3 +94,44 @@ def access(
         ),
         display_format,
     )
+
+
+@app.command()
+def teams(
+    account_email: str,
+    display_format: FormatOption = Format.TABLE,
+) -> None:
+    """
+    Review teams a user is a part of
+    """
+    # HACK: https://github.com/martyzz1/heroku3.py/pull/133
+    Collaborator._strs.append("role")  # type:ignore
+
+    with ThreadPoolExecutor() as executor:
+        # The only teams we know about are the ones for apps we know about
+        teams = {app.team.name for app in heroku.apps()}
+
+        team_membership = {}
+        for team_name, team_member in track(
+            zip_map(executor, lambda t: get_member_of_team(t, account_email), teams),
+            description="Loading admin status...",
+            total=len(teams),
+            disable=not SHOW_PROGRESS,
+        ):
+            if team_member:
+                team_membership[team_name] = team_member
+
+    display_data(
+        sorted(
+            (
+                {
+                    "Team": team_name,
+                    "Date Given": team_membership.created_at.date().isoformat(),
+                    "Role": style_user_role(team_membership.role),
+                }
+                for team_name, team_membership in team_membership.items()
+            ),
+            key=operator.itemgetter("Team"),
+        ),
+        display_format,
+    )
