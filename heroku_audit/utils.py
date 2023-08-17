@@ -1,4 +1,6 @@
 import sys
+from concurrent.futures import Executor
+from typing import Callable, Iterable
 
 from heroku3.models.addon import Addon
 from heroku3.models.app import App
@@ -16,3 +18,10 @@ def get_apps_for_teams(team: str) -> list[App]:
 
 def get_addon_plan(addon: Addon) -> str:
     return addon.plan.name.split(":", 1)[-1]
+
+
+def zip_map(executor: Executor, fn: Callable, iterable: Iterable) -> Iterable:
+    """
+    Concurrently maps `list[T]` to `list[(T, fn(T))]`
+    """
+    yield from executor.map(lambda a: (a, fn(a)), iterable)

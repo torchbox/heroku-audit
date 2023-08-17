@@ -10,7 +10,12 @@ from rich.text import Text
 from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
-from heroku_audit.utils import SHOW_PROGRESS, get_addon_plan, get_apps_for_teams
+from heroku_audit.utils import (
+    SHOW_PROGRESS,
+    get_addon_plan,
+    get_apps_for_teams,
+    zip_map,
+)
 
 app = typer.Typer(name="postgres", help="Report on Heroku Postgres databases.")
 
@@ -78,9 +83,7 @@ def major_version(
 
         results = []
         for addon, addon_details in track(
-            executor.map(
-                lambda a: (a, get_heroku_postgres_details(a)), collected_addons
-            ),
+            zip_map(executor, get_heroku_postgres_details, collected_addons),
             description="Probing databases...",
             total=len(collected_addons),
             disable=not SHOW_PROGRESS,
@@ -176,7 +179,7 @@ def count(
         app_to_addons = {}
 
         for app, addons in track(
-            executor.map(lambda a: (a, a.addons()), apps),
+            zip_map(executor, lambda a: a.addons(), apps),
             description="Loading addons...",
             total=len(apps),
             disable=not SHOW_PROGRESS,
@@ -232,9 +235,7 @@ def backup_schedule(
 
         results = []
         for addon, backup_schedules in track(
-            executor.map(
-                lambda a: (a, get_heroku_postgres_backup_schedules(a)), collected_addons
-            ),
+            zip_map(executor, get_heroku_postgres_backup_schedules, collected_addons),
             description="Probing databases...",
             total=len(collected_addons),
             disable=not SHOW_PROGRESS,

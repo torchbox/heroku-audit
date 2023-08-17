@@ -9,7 +9,7 @@ from rich.text import Text
 from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
-from heroku_audit.utils import SHOW_PROGRESS, get_apps_for_teams
+from heroku_audit.utils import SHOW_PROGRESS, get_apps_for_teams, zip_map
 
 app = typer.Typer(name="apps", help="Report on Heroku apps.")
 
@@ -29,7 +29,7 @@ def formation(
         app_formations = {}
 
         for app, formations in track(
-            executor.map(lambda a: (a, a.process_formation()), apps),
+            zip_map(executor, lambda a: a.process_formation(), apps),
             description="Loading formation...",
             total=len(apps),
             disable=not SHOW_PROGRESS,
