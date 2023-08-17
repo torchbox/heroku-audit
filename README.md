@@ -5,6 +5,7 @@ Command-line tool for reporting on specific attributes of a Heroku environment.
 ## Components
 
 - Apps
+- Users
 - Environment Variables
 - Heroku Postgres
 - Heroku Data for Redis
