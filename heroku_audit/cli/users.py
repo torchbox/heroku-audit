@@ -13,13 +13,13 @@ app = typer.Typer(name="users", help="Report on Heroku users.")
 
 
 @app.command()
-def access(
+def collaborator_access(
     account_email: str,
     team: TeamOption = None,
     display_format: FormatOption = Format.TABLE,
 ) -> None:
     """
-    Review apps a user has access to
+    Review apps a user has collaborator access to
     """
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
