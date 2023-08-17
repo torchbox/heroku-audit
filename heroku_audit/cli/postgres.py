@@ -1,15 +1,15 @@
 import operator
 from concurrent.futures import ThreadPoolExecutor
-from typing import Annotated, Optional, TypedDict
+from typing import Annotated, Optional, TypedDict, cast
 
 import typer
 from heroku3.models.addon import Addon
 from rich.progress import track
-from rich.text import Text
 
 from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
+from heroku_audit.style import style_backup_schedules
 from heroku_audit.utils import (
     SHOW_PROGRESS,
     get_addon_plan,
@@ -32,6 +32,11 @@ class HerokuPostgresDetails(TypedDict):
     postgres_version: str
 
 
+class HerokuBackupSchedule(TypedDict):
+    hour: str
+    timezone: str
+
+
 def get_heroku_postgres_details(addon: Addon) -> HerokuPostgresDetails:
     host = get_postgres_api_hostname(addon)
     response = heroku._session.get(f"https://{host}/client/v11/databases/{addon.id}")
@@ -44,15 +49,13 @@ def get_heroku_postgres_details(addon: Addon) -> HerokuPostgresDetails:
     return {"postgres_version": data["info"]["PG Version"][0]}
 
 
-def get_heroku_postgres_backup_schedules(addon: Addon) -> list[str]:
+def get_heroku_postgres_backup_schedules(addon: Addon) -> list[HerokuBackupSchedule]:
     host = get_postgres_api_hostname(addon)
     response = heroku._session.get(
         f"https://{host}/client/v11/databases/{addon.id}/transfer-schedules"
     )
     response.raise_for_status()
-    data = response.json()
-
-    return [f"Daily at {s['hour']}:00 {s['timezone']}" for s in data]
+    return cast(list[HerokuBackupSchedule], response.json())
 
 
 @app.command()
@@ -248,9 +251,7 @@ def backup_schedule(
                     "App": addon.app.name,
                     "Addon": addon.name,
                     "Plan": get_addon_plan(addon),
-                    "Schedule": ", ".join(backup_schedules)
-                    if backup_schedules
-                    else Text("NONE", style="red"),
+                    "Schedule": style_backup_schedules(backup_schedules),
                 }
             )
 

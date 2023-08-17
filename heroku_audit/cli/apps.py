@@ -9,6 +9,7 @@ from rich.text import Text
 from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
+from heroku_audit.style import style_dyno_formation_quantity, style_dyno_formation_size
 from heroku_audit.utils import SHOW_PROGRESS, get_apps_for_teams, zip_map
 
 app = typer.Typer(name="apps", help="Report on Heroku apps.")
@@ -47,12 +48,8 @@ def formation(
             (
                 {
                     "App": app.name,
-                    "Size": Text(formation.size, style="purple")
-                    if formation.size == "Basic"
-                    else formation.size,
-                    "Quantity": formation.quantity
-                    if formation.quantity
-                    else Text("Stopped", style="red"),
+                    "Size": style_dyno_formation_size(formation.size),
+                    "Quantity": style_dyno_formation_quantity(formation.quantity),
                     "Command": Text(formation.command, style="green"),
                 }
                 for app, formation in app_formations.items()

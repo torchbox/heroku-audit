@@ -5,11 +5,11 @@ from typing import Optional
 import typer
 from heroku3.models.collaborator import Collaborator
 from rich.progress import track
-from rich.text import Text
 
 from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
+from heroku_audit.style import style_user_role
 from heroku_audit.utils import SHOW_PROGRESS, get_apps_for_teams, zip_map
 
 app = typer.Typer(name="users", help="Report on Heroku users.")
@@ -82,9 +82,7 @@ def access(
                 {
                     "App": app.name,
                     "Date Given": collaborator.created_at.date().isoformat(),
-                    "Role": Text(collaborator.role, style="red")
-                    if collaborator.role == "admin"
-                    else collaborator.role,
+                    "Role": style_user_role(collaborator.role),
                 }
                 for app, collaborator in app_access.items()
             ),
