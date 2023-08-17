@@ -31,11 +31,39 @@ jobs:
       env:
         HEROKU_API_KEY: dummy
 
+  exe:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.11"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade flit pyinstaller
+        flit install --deps=production
+    - name: Build executable
+      run: pyinstaller -F --strip heroku_audit/__main__.py --name heroku_audit --clean
+      env:
+        HEROKU_API_KEY: dummy  # Set a dummy key to let the build import the module successfully
+    - name: Save executable
+      uses: actions/upload-artifact@v3
+      with:
+        name: heroku-audit-${{ matrix.os }}
+        path: dist/
+
   build:
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     runs-on: ubuntu-latest
-    needs: lint
+    needs:
+      - lint
+      - exe
     steps:
     - uses: actions/checkout@v3
       with:
