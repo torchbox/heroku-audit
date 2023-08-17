@@ -28,6 +28,8 @@ jobs:
       run: ruff check heroku_audit stubs
     - name: List commands
       run: heroku_audit --list
+      env:
+        HEROKU_API_KEY: dummy
 
   build:
     permissions:
