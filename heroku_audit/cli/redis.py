@@ -1,3 +1,4 @@
+import operator
 from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated, Optional, TypedDict
 
@@ -82,7 +83,7 @@ def major_version(
                 }
             )
 
-    display_data(sorted(results, key=lambda r: r["Version"]), display_format)
+    display_data(sorted(results, key=operator.itemgetter("Version")), display_format)
 
 
 @app.command()
@@ -130,7 +131,7 @@ def plan(
                 }
                 for addon in collected_addons
             ),
-            key=lambda r: r["App"],
+            key=operator.itemgetter("App"),
         ),
         display_format,
     )
@@ -180,7 +181,7 @@ def count(
                 for app, addons in app_to_addons.items()
                 if len(addons) >= minimum
             ),
-            key=lambda r: r["Instances"],
+            key=operator.itemgetter("Instances"),
             reverse=True,
         ),
         display_format,
@@ -232,4 +233,4 @@ def maxmemory_policy(
                 }
             )
 
-    display_data(sorted(results, key=lambda r: r["Policy"]), display_format)
+    display_data(sorted(results, key=operator.itemgetter("Policy")), display_format)

@@ -1,3 +1,4 @@
+import operator
 from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated
 
@@ -56,7 +57,7 @@ def formation(
                 }
                 for app, formation in app_formations.items()
             ),
-            key=lambda r: r["App"],
+            key=operator.itemgetter("App"),
         ),
         display_format,
     )

@@ -1,4 +1,5 @@
 import fnmatch
+import operator
 import re
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -52,7 +53,7 @@ def value_of(
     display_data(
         sorted(
             ({"App": app.name, "Value": value} for app, value in app_values.items()),
-            key=lambda r: r["App"],
+            key=operator.itemgetter("App"),
         ),
         display_format,
     )
@@ -96,7 +97,7 @@ def contains(
                 }
                 for app, matched_variables in matches.items()
             ),
-            key=lambda r: (r["Match Count"], r["App"]),
+            key=operator.itemgetter("Match Count", "App"),
         ),
         display_format,
     )
