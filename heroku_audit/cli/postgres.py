@@ -49,28 +49,6 @@ def get_heroku_postgres_backup_schedules(addon: Addon) -> list[str]:
     return [f"Daily at {s['hour']}:00 {s['timezone']}" for s in data]
 
 
-def get_version_column(addon: Addon) -> dict:
-    return {
-        "App": addon.app.name,
-        "Addon": addon.name,
-        "Plan": get_addon_plan(addon),
-        "Version": get_heroku_postgres_details(addon)["postgres_version"],
-    }
-
-
-def get_backup_column(addon: Addon) -> dict:
-    backup_schedules = get_heroku_postgres_backup_schedules(addon)
-
-    return {
-        "App": addon.app.name,
-        "Addon": addon.name,
-        "Plan": get_addon_plan(addon),
-        "Schedule": ", ".join(backup_schedules)
-        if backup_schedules
-        else Text("NONE", style="red"),
-    }
-
-
 @app.command()
 def major_version(
     target: Annotated[
@@ -98,15 +76,26 @@ def major_version(
             )
 
         results = []
-        for result in track(
-            executor.map(get_version_column, collected_addons),
+        for addon, addon_details in track(
+            executor.map(
+                lambda a: (a, get_heroku_postgres_details(a)), collected_addons
+            ),
             description="Probing databases...",
             total=len(collected_addons),
             disable=not SHOW_PROGRESS,
         ):
-            if target and result["Version"].split(".", 1)[0] != str(target):
+            if target and addon_details["postgres_version"].split(".", 1)[0] != str(
+                target
+            ):
                 continue
-            results.append(result)
+            results.append(
+                {
+                    "App": addon.app.name,
+                    "Addon": addon.name,
+                    "Plan": get_addon_plan(addon),
+                    "Version": addon_details["postgres_version"],
+                }
+            )
 
     display_data(sorted(results, key=lambda r: r["Version"]), display_format)
 
@@ -241,14 +230,26 @@ def backup_schedule(
             )
 
         results = []
-        for result in track(
-            executor.map(get_backup_column, collected_addons),
+        for addon, backup_schedules in track(
+            executor.map(
+                lambda a: (a, get_heroku_postgres_backup_schedules(a)), collected_addons
+            ),
             description="Probing databases...",
             total=len(collected_addons),
             disable=not SHOW_PROGRESS,
         ):
-            if missing_only and str(result["Schedule"]) != "NONE":
+            if missing_only and backup_schedules:
                 continue
-            results.append(result)
+
+            results.append(
+                {
+                    "App": addon.app.name,
+                    "Addon": addon.name,
+                    "Plan": get_addon_plan(addon),
+                    "Schedule": ", ".join(backup_schedules)
+                    if backup_schedules
+                    else Text("NONE", style="red"),
+                }
+            )
 
     display_data(sorted(results, key=lambda r: r["App"]), display_format)

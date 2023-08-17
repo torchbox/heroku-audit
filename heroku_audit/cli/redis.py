@@ -36,27 +36,6 @@ def get_heroku_redis_details(addon: Addon) -> dict:
     }
 
 
-def get_version_column(addon: Addon) -> dict:
-    details = get_heroku_redis_details(addon)
-    return {
-        "App": addon.app.name,
-        "Addon": addon.name,
-        "Plan": get_addon_plan(addon),
-        "Version": details["version"],
-        "Max Memory Policy": details["maxmemory_policy"],
-    }
-
-
-def get_maxmemory_policy_column(addon: Addon) -> dict:
-    details = get_heroku_redis_details(addon)
-    return {
-        "App": addon.app.name,
-        "Addon": addon.name,
-        "Plan": get_addon_plan(addon),
-        "Policy": details["maxmemory_policy"],
-    }
-
-
 @app.command()
 def major_version(
     target: Annotated[
@@ -84,15 +63,24 @@ def major_version(
             )
 
         results = []
-        for result in track(
-            executor.map(get_version_column, collected_addons),
+        for addon, addon_details in track(
+            executor.map(lambda a: (a, get_heroku_redis_details(a)), collected_addons),
             description="Probing databases...",
             total=len(collected_addons),
             disable=not SHOW_PROGRESS,
         ):
-            if target and result["Version"].split(".", 1)[0] != str(target):
+            if target and addon_details["version"].split(".", 1)[0] != str(target):
                 continue
-            results.append(result)
+
+            results.append(
+                {
+                    "App": addon.app.name,
+                    "Addon": addon.name,
+                    "Plan": get_addon_plan(addon),
+                    "Version": addon_details["version"],
+                    "Max Memory Policy": addon_details["maxmemory_policy"],
+                }
+            )
 
     display_data(sorted(results, key=lambda r: r["Version"]), display_format)
 
@@ -226,14 +214,22 @@ def maxmemory_policy(
             )
 
         results = []
-        for result in track(
-            executor.map(get_maxmemory_policy_column, collected_addons),
+        for addon, addon_details in track(
+            executor.map(lambda a: (a, get_heroku_redis_details(a)), collected_addons),
             description="Probing databases...",
             total=len(collected_addons),
             disable=not SHOW_PROGRESS,
         ):
-            if policy and result["Policy"] != policy:
+            if policy and addon_details["maxmemory_policy"] != policy:
                 continue
-            results.append(result)
+
+            results.append(
+                {
+                    "App": addon.app.name,
+                    "Addon": addon.name,
+                    "Plan": get_addon_plan(addon),
+                    "Policy": addon_details["maxmemory_policy"],
+                }
+            )
 
     display_data(sorted(results, key=lambda r: r["Policy"]), display_format)
