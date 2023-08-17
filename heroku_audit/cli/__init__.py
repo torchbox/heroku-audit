@@ -6,7 +6,7 @@ from typer.rich_utils import _print_commands_panel
 
 from heroku_audit import __version__
 
-from . import apps, env, postgres, redis
+from . import apps, env, postgres, redis, users
 
 app = typer.Typer(help="Heroku audit tool")
 
@@ -15,6 +15,7 @@ app.add_typer(apps.app)
 app.add_typer(env.app)
 app.add_typer(postgres.app)
 app.add_typer(redis.app)
+app.add_typer(users.app)
 
 
 def version_callback(version: bool) -> None:
