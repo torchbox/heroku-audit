@@ -1,6 +1,6 @@
 import csv
 import json
-from enum import StrEnum
+from enum import Enum
 from io import StringIO
 from typing import Annotated, Any
 
@@ -22,7 +22,7 @@ class RichJSONEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-class Format(StrEnum):
+class Format(str, Enum):
     TABLE = "table"
     CSV = "csv"
     JSON = "json"
