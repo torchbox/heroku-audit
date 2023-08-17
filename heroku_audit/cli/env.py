@@ -1,15 +1,17 @@
-import typer
-from heroku_audit.client import heroku
-from typing import Optional, Annotated
-from rich.progress import track
-from concurrent.futures import ThreadPoolExecutor
-from heroku_audit.format import display_data, FormatOption, Format
-from heroku_audit.utils import get_apps_for_teams, SHOW_PROGRESS
-from rich.text import Text
-from collections import defaultdict
 import fnmatch
 import re
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from typing import Annotated, Optional
+
+import typer
+from rich.progress import track
+from rich.text import Text
+
+from heroku_audit.client import heroku
+from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
+from heroku_audit.utils import SHOW_PROGRESS, get_apps_for_teams
 
 app = typer.Typer(name="env", help="Report on Environment variables.")
 
@@ -22,8 +24,8 @@ def value_of(
         typer.Option(help="Only show apps with the variable missing"),
     ] = None,
     team: TeamOption = None,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Find the value of a given environment variable
     """
@@ -52,7 +54,7 @@ def value_of(
             ({"App": app.name, "Value": value} for app, value in app_values.items()),
             key=lambda r: r["App"],
         ),
-        format,
+        display_format,
     )
 
 
@@ -62,8 +64,8 @@ def contains(
         str, typer.Argument(help="Value to search for. Glob syntax is supported.")
     ],
     team: TeamOption = None,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Find applications with a given environment variable value set.
     """
@@ -96,5 +98,5 @@ def contains(
             ),
             key=lambda r: (r["Match Count"], r["App"]),
         ),
-        format,
+        display_format,
     )

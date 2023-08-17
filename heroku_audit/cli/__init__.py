@@ -1,12 +1,12 @@
-import typer
+from typing import Annotated, Optional, cast
 
-from . import apps, env, postgres, redis
-from typing import Annotated, Optional
-from heroku_audit import __version__
-from rich.table import Table
+import typer
 from rich.console import Console
 from typer.rich_utils import _print_commands_panel
 
+from heroku_audit import __version__
+
+from . import apps, env, postgres, redis
 
 app = typer.Typer(help="Heroku audit tool")
 
@@ -17,19 +17,20 @@ app.add_typer(postgres.app)
 app.add_typer(redis.app)
 
 
-def version_callback(version: bool):
+def version_callback(version: bool) -> None:
     if version:
         print("Version", __version__)
         raise typer.Exit()
 
 
-def list_callback(should_list: bool):
+def list_callback(should_list: bool) -> None:
     if should_list:
-        click_command = typer.main.get_command(app)
+        typer_group = typer.main.get_group(app)
 
         commands = []
-        for group_name, group in sorted(click_command.commands.items()):
-            for _command_name, command in sorted(group.commands.items()):
+        for group_name, group in sorted(typer_group.commands.items()):
+            command_group = cast(typer.core.TyperGroup, group)
+            for _command_name, command in sorted(command_group.commands.items()):
                 # Prefix command name
                 command.name = f"{group_name} {command.name}"
                 commands.append(command)
@@ -63,5 +64,5 @@ def main(
             callback=list_callback,
         ),
     ] = False,
-):
+) -> None:
     pass

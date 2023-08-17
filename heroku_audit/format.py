@@ -1,12 +1,13 @@
-from rich.table import Table
-from rich.console import Console
 import csv
-from typing import Annotated
-from enum import StrEnum
-import typer
 import json
+from enum import StrEnum
 from io import StringIO
+from typing import Annotated, Any
+
+import typer
+from rich.console import Console
 from rich.protocol import is_renderable
+from rich.table import Table
 
 
 class RichJSONEncoder(json.JSONEncoder):
@@ -14,7 +15,7 @@ class RichJSONEncoder(json.JSONEncoder):
     A custom JSON encoder which handles `rich` datatypes
     """
 
-    def default(self, o):
+    def default(self, o: Any) -> Any:
         if is_renderable(o):
             return str(o)
 
@@ -27,14 +28,14 @@ class Format(StrEnum):
     JSON = "json"
 
 
-FormatOption = Annotated[Format, typer.Option()]
+FormatOption = Annotated[Format, typer.Option("--format")]
 
 
-def display_data(data: list[dict], format: Format):
+def display_data(data: list[dict], display_format: Format) -> None:
     if not data:
         return
 
-    if format == Format.TABLE:
+    if display_format == Format.TABLE:
         headers = data[0].keys()
         table = Table(*headers)
         for row in data:
@@ -42,7 +43,7 @@ def display_data(data: list[dict], format: Format):
             table.add_row(*values)
         Console().print(table)
 
-    elif format == Format.CSV:
+    elif display_format == Format.CSV:
         headers = data[0].keys()
         output = StringIO()
         writer = csv.DictWriter(output, fieldnames=headers)
@@ -51,5 +52,5 @@ def display_data(data: list[dict], format: Format):
         output.seek(0)
         print(output.getvalue())
 
-    elif format == Format.JSON:
+    elif display_format == Format.JSON:
         print(json.dumps(data, cls=RichJSONEncoder))

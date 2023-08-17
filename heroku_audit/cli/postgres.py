@@ -1,13 +1,15 @@
-import typer
-from heroku_audit.client import heroku
-from typing import Optional, Annotated, TypedDict
-from rich.progress import track
 from concurrent.futures import ThreadPoolExecutor
-from heroku_audit.format import display_data, FormatOption, Format
+from typing import Annotated, Optional, TypedDict
+
+import typer
 from heroku3.models.addon import Addon
-from heroku_audit.utils import get_apps_for_teams, SHOW_PROGRESS, get_addon_plan
-from heroku_audit.options import TeamOption
+from rich.progress import track
 from rich.text import Text
+
+from heroku_audit.client import heroku
+from heroku_audit.format import Format, FormatOption, display_data
+from heroku_audit.options import TeamOption
+from heroku_audit.utils import SHOW_PROGRESS, get_addon_plan, get_apps_for_teams
 
 app = typer.Typer(name="postgres", help="Report on Heroku Postgres databases.")
 
@@ -36,7 +38,7 @@ def get_heroku_postgres_details(addon: Addon) -> HerokuPostgresDetails:
     return {"postgres_version": data["info"]["PG Version"][0]}
 
 
-def get_heroku_postgres_backup_schedules(addon: Addon) -> HerokuPostgresDetails:
+def get_heroku_postgres_backup_schedules(addon: Addon) -> list[str]:
     host = get_postgres_api_hostname(addon)
     response = heroku._session.get(
         f"https://{host}/client/v11/databases/{addon.id}/transfer-schedules"
@@ -47,7 +49,7 @@ def get_heroku_postgres_backup_schedules(addon: Addon) -> HerokuPostgresDetails:
     return [f"Daily at {s['hour']}:00 {s['timezone']}" for s in data]
 
 
-def get_version_column(addon: Addon):
+def get_version_column(addon: Addon) -> dict:
     return {
         "App": addon.app.name,
         "Addon": addon.name,
@@ -56,7 +58,7 @@ def get_version_column(addon: Addon):
     }
 
 
-def get_backup_column(addon: Addon):
+def get_backup_column(addon: Addon) -> dict:
     backup_schedules = get_heroku_postgres_backup_schedules(addon)
 
     return {
@@ -76,15 +78,15 @@ def major_version(
         typer.Option(help="Version to look for"),
     ] = None,
     team: TeamOption = None,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Audit the available postgres database versions
     """
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons = []
+        collected_addons: list[Addon] = []
         for addons in track(
             executor.map(lambda a: a.addons(), apps),
             description="Loading addons...",
@@ -106,7 +108,7 @@ def major_version(
                 continue
             results.append(result)
 
-    display_data(sorted(results, key=lambda r: r["Version"]), format)
+    display_data(sorted(results, key=lambda r: r["Version"]), display_format)
 
 
 @app.command()
@@ -116,18 +118,18 @@ def plan(
         typer.Argument(help="Plan to look for"),
     ] = None,
     team: TeamOption = None,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Find Heroku Postgres instances with a given plan
     """
     # HACK: https://github.com/martyzz1/heroku3.py/pull/132
-    Addon._strs.append("config_vars")
+    Addon._strs.append("config_vars")  # type:ignore
 
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons = []
+        collected_addons: list[Addon] = []
         for addons in track(
             executor.map(lambda a: a.addons(), apps),
             description="Loading addons...",
@@ -156,7 +158,7 @@ def plan(
             ),
             key=lambda r: r["App"],
         ),
-        format,
+        display_format,
     )
 
 
@@ -170,13 +172,13 @@ def count(
         ),
     ] = 1,
     team: TeamOption = None,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Find apps with a given number of databases
     """
     # HACK: https://github.com/martyzz1/heroku3.py/pull/132
-    Addon._strs.append("config_vars")
+    Addon._strs.append("config_vars")  # type:ignore
 
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
@@ -207,7 +209,7 @@ def count(
             key=lambda r: r["Databases"],
             reverse=True,
         ),
-        format,
+        display_format,
     )
 
 
@@ -218,8 +220,8 @@ def backup_schedule(
         Optional[bool],
         typer.Option(help="Only show databases without backup schedules"),
     ] = False,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Find backup schedules for databases
     """
@@ -227,7 +229,7 @@ def backup_schedule(
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons = []
+        collected_addons: list[Addon] = []
         for addons in track(
             executor.map(lambda a: a.addons(), apps),
             description="Loading addons...",
@@ -249,4 +251,4 @@ def backup_schedule(
                 continue
             results.append(result)
 
-    display_data(sorted(results, key=lambda r: r["App"]), format)
+    display_data(sorted(results, key=lambda r: r["App"]), display_format)

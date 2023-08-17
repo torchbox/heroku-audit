@@ -1,4 +1,5 @@
 from typing import Annotated, Optional
+
 import typer
 
 TeamOption = Annotated[

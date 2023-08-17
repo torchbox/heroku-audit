@@ -1,7 +1,8 @@
 import os
+
 import heroku3
-from rich.text import Text
 from rich import print
+from rich.text import Text
 
 try:
     heroku = heroku3.from_key(os.environ["HEROKU_API_KEY"])

@@ -1,12 +1,14 @@
-import typer
-from heroku_audit.client import heroku
-from typing import Annotated
-from rich.progress import track
 from concurrent.futures import ThreadPoolExecutor
-from heroku_audit.format import display_data, FormatOption, Format
-from heroku_audit.utils import get_apps_for_teams, SHOW_PROGRESS
+from typing import Annotated
+
+import typer
+from rich.progress import track
 from rich.text import Text
+
+from heroku_audit.client import heroku
+from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
+from heroku_audit.utils import SHOW_PROGRESS, get_apps_for_teams
 
 app = typer.Typer(name="apps", help="Report on Heroku apps.")
 
@@ -15,8 +17,8 @@ app = typer.Typer(name="apps", help="Report on Heroku apps.")
 def formation(
     process: Annotated[str, typer.Option()] = "web",
     team: TeamOption = None,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Review formation for a given process.
     """
@@ -56,5 +58,5 @@ def formation(
             ),
             key=lambda r: r["App"],
         ),
-        format,
+        display_format,
     )

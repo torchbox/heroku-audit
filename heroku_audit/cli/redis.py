@@ -1,13 +1,14 @@
-import typer
-from heroku_audit.options import TeamOption
-from heroku_audit.utils import get_apps_for_teams, SHOW_PROGRESS, get_addon_plan
-from heroku_audit.format import FormatOption, display_data, Format
 from concurrent.futures import ThreadPoolExecutor
-from heroku_audit.client import heroku
 from typing import Annotated, Optional, TypedDict
+
+import typer
 from heroku3.models.addon import Addon
 from rich.progress import track
 
+from heroku_audit.client import heroku
+from heroku_audit.format import Format, FormatOption, display_data
+from heroku_audit.options import TeamOption
+from heroku_audit.utils import SHOW_PROGRESS, get_addon_plan, get_apps_for_teams
 
 app = typer.Typer(name="redis", help="Report on Heroku Data for Redis.")
 
@@ -35,7 +36,7 @@ def get_heroku_redis_details(addon: Addon) -> dict:
     }
 
 
-def get_version_column(addon: Addon):
+def get_version_column(addon: Addon) -> dict:
     details = get_heroku_redis_details(addon)
     return {
         "App": addon.app.name,
@@ -46,7 +47,7 @@ def get_version_column(addon: Addon):
     }
 
 
-def get_maxmemory_policy_column(addon: Addon):
+def get_maxmemory_policy_column(addon: Addon) -> dict:
     details = get_heroku_redis_details(addon)
     return {
         "App": addon.app.name,
@@ -63,15 +64,15 @@ def major_version(
         typer.Option(help="Version to look for"),
     ] = None,
     team: TeamOption = None,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Audit the available redis database versions
     """
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons = []
+        collected_addons: list[Addon] = []
         for addons in track(
             executor.map(lambda a: a.addons(), apps),
             description="Loading addons...",
@@ -93,7 +94,7 @@ def major_version(
                 continue
             results.append(result)
 
-    display_data(sorted(results, key=lambda r: r["Version"]), format)
+    display_data(sorted(results, key=lambda r: r["Version"]), display_format)
 
 
 @app.command()
@@ -103,18 +104,18 @@ def plan(
         typer.Argument(help="Plan to look for"),
     ] = None,
     team: TeamOption = None,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Find Redis instances with a given plan
     """
     # HACK: https://github.com/martyzz1/heroku3.py/pull/132
-    Addon._strs.append("config_vars")
+    Addon._strs.append("config_vars")  # type:ignore
 
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons = []
+        collected_addons: list[Addon] = []
         for addons in track(
             executor.map(lambda a: a.addons(), apps),
             description="Loading addons...",
@@ -143,7 +144,7 @@ def plan(
             ),
             key=lambda r: r["App"],
         ),
-        format,
+        display_format,
     )
 
 
@@ -157,13 +158,13 @@ def count(
         ),
     ] = 1,
     team: TeamOption = None,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Find apps with a given number of instances
     """
     # HACK: https://github.com/martyzz1/heroku3.py/pull/132
-    Addon._strs.append("config_vars")
+    Addon._strs.append("config_vars")  # type: ignore
 
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
@@ -194,7 +195,7 @@ def count(
             key=lambda r: r["Instances"],
             reverse=True,
         ),
-        format,
+        display_format,
     )
 
 
@@ -205,15 +206,15 @@ def maxmemory_policy(
         typer.Argument(help="Policy to look for"),
     ] = None,
     team: TeamOption = None,
-    format: FormatOption = Format.TABLE,
-):
+    display_format: FormatOption = Format.TABLE,
+) -> None:
     """
     Audit the redis `maxmemory-policy`
     """
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons = []
+        collected_addons: list[Addon] = []
         for addons in track(
             executor.map(lambda a: a.addons(), apps),
             description="Loading addons...",
@@ -235,4 +236,4 @@ def maxmemory_policy(
                 continue
             results.append(result)
 
-    display_data(sorted(results, key=lambda r: r["Policy"]), format)
+    display_data(sorted(results, key=lambda r: r["Policy"]), display_format)
