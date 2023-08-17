@@ -26,6 +26,8 @@ jobs:
       run: black --check heroku_audit stubs
     - name: lint
       run: ruff check heroku_audit stubs
+    - name: List commands
+      run: heroku_audit --list
 
   build:
     permissions:
