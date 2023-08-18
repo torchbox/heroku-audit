@@ -27,7 +27,7 @@ jobs:
     - name: lint
       run: ruff check heroku_audit stubs
     - name: List commands
-      run: heroku_audit --list
+      run: heroku-audit --list
       env:
         HEROKU_API_KEY: dummy
 
@@ -48,7 +48,7 @@ jobs:
         python -m pip install --upgrade flit pyinstaller
         flit install --deps=production
     - name: Build executable
-      run: pyinstaller -F --strip heroku_audit/__main__.py --name heroku_audit --clean
+      run: pyinstaller -F --strip heroku_audit/__main__.py --name heroku-audit --clean
       env:
         HEROKU_API_KEY: dummy  # Set a dummy key to let the build import the module successfully
     - name: Save executable
