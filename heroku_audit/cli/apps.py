@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated
 
 import typer
+from heroku3.models.addon import Addon
 from rich.progress import track
 from rich.text import Text
 
@@ -10,7 +11,12 @@ from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
 from heroku_audit.style import style_dyno_formation_quantity, style_dyno_formation_size
-from heroku_audit.utils import SHOW_PROGRESS, get_apps_for_teams, zip_map
+from heroku_audit.utils import (
+    SHOW_PROGRESS,
+    get_addon_plan,
+    get_apps_for_teams,
+    zip_map,
+)
 
 app = typer.Typer(name="apps", help="Report on Heroku apps.")
 
@@ -53,6 +59,48 @@ def formation(
                     "Command": Text(formation.command, style="green"),
                 }
                 for app, formation in app_formations.items()
+            ),
+            key=operator.itemgetter("App"),
+        ),
+        display_format,
+    )
+
+
+@app.command()
+def addon(
+    addon_name: Annotated[
+        str, typer.Argument(help="Addon name (prefix) to search for")
+    ],
+    team: TeamOption = None,
+    display_format: FormatOption = Format.TABLE,
+) -> None:
+    """
+    Review apps which use a given addon
+    """
+
+    with ThreadPoolExecutor() as executor:
+        apps = heroku.apps() if team is None else get_apps_for_teams(team)
+
+        collected_addons: list[Addon] = []
+        for addons in track(
+            executor.map(lambda a: a.addons(), apps),
+            description="Loading addons...",
+            total=len(apps),
+            disable=not SHOW_PROGRESS,
+        ):
+            collected_addons.extend(
+                addon for addon in addons if addon.plan.name.startswith(addon_name)
+            )
+
+    display_data(
+        sorted(
+            (
+                {
+                    "App": addon.app.name,
+                    "Addon": addon.name,
+                    "Plan": get_addon_plan(addon),
+                }
+                for addon in collected_addons
             ),
             key=operator.itemgetter("App"),
         ),
