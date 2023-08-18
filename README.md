@@ -20,7 +20,7 @@ Note: See `heroku-audit --help` for further details.
 
 Authentication is handled through the `$HEROKU_API_KEY` environment variable, which must be set to a valid Heroku API key.
 
-Each components is its own sub-command, containing a number of pre-made reports. For example `heroku-audit redis maxmemory-policy noeviction` finds all Redis instances with a given [maxmemory-policy](https://devcenter.heroku.com/articles/heroku-redis#maxmemory-policy) ("noeviction" can be omitted to view all results). `heroku-audit --list` will list all available commands.
+Each components is its own sub-command, containing a number of pre-made reports. `heroku-audit --list` will list all available commands.
 
 To audit for a single team, add `--team=<team>`.
 
