@@ -1,4 +1,5 @@
 import operator
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated, Optional, TypedDict
 
@@ -12,6 +13,7 @@ from heroku_audit.options import TeamOption
 from heroku_audit.utils import (
     SHOW_PROGRESS,
     get_addon_plan,
+    get_addons,
     get_apps_for_teams,
     zip_map,
 )
@@ -57,22 +59,17 @@ def major_version(
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons: list[Addon] = []
-        for addons in track(
-            executor.map(lambda a: a.addons(), apps),
-            description="Loading addons...",
-            total=len(apps),
-            disable=not SHOW_PROGRESS,
-        ):
-            collected_addons.extend(
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_REDIS)
-            )
+        redis_addons = [
+            addon
+            for addon in get_addons(executor, apps)
+            if addon.plan.name.startswith(HEROKU_REDIS)
+        ]
 
         results = []
         for addon, addon_details in track(
-            zip_map(executor, get_heroku_redis_details, collected_addons),
+            zip_map(executor, get_heroku_redis_details, redis_addons),
             description="Probing databases...",
-            total=len(collected_addons),
+            total=len(redis_addons),
             disable=not SHOW_PROGRESS,
         ):
             if target and addon_details["version"].split(".", 1)[0] != str(target):
@@ -109,20 +106,15 @@ def plan(
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons: list[Addon] = []
-        for addons in track(
-            executor.map(lambda a: a.addons(), apps),
-            description="Loading addons...",
-            total=len(apps),
-            disable=not SHOW_PROGRESS,
-        ):
-            collected_addons.extend(
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_REDIS)
-            )
+        redis_addons = [
+            addon
+            for addon in get_addons(executor, apps)
+            if addon.plan.name.startswith(HEROKU_REDIS)
+        ]
 
     if plan:
-        collected_addons = [
-            addon for addon in collected_addons if get_addon_plan(addon) == plan
+        redis_addons = [
+            addon for addon in redis_addons if get_addon_plan(addon) == plan
         ]
 
     display_data(
@@ -134,7 +126,7 @@ def plan(
                     "Attachments": ", ".join(sorted(addon.config_vars)),
                     "Plan": get_addon_plan(addon),
                 }
-                for addon in collected_addons
+                for addon in redis_addons
             ),
             key=operator.itemgetter("App"),
         ),
@@ -163,17 +155,13 @@ def count(
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        app_to_addons = {}
+        app_to_addons = defaultdict(list)
 
-        for app, addons in track(
-            zip_map(executor, lambda a: a.addons(), apps),
-            description="Loading addons...",
-            total=len(apps),
-            disable=not SHOW_PROGRESS,
-        ):
-            app_to_addons[app] = [
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_REDIS)
-            ]
+        for addon in get_addons(executor, apps):
+            if not addon.plan.name.startswith(HEROKU_REDIS):
+                continue
+
+            app_to_addons[addon.app].append(addon)
 
     display_data(
         sorted(
@@ -208,22 +196,17 @@ def maxmemory_policy(
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons: list[Addon] = []
-        for addons in track(
-            executor.map(lambda a: a.addons(), apps),
-            description="Loading addons...",
-            total=len(apps),
-            disable=not SHOW_PROGRESS,
-        ):
-            collected_addons.extend(
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_REDIS)
-            )
+        redis_addons = [
+            addon
+            for addon in get_addons(executor, apps)
+            if addon.plan.name.startswith(HEROKU_REDIS)
+        ]
 
         results = []
         for addon, addon_details in track(
-            zip_map(executor, get_heroku_redis_details, collected_addons),
+            zip_map(executor, get_heroku_redis_details, redis_addons),
             description="Probing databases...",
-            total=len(collected_addons),
+            total=len(redis_addons),
             disable=not SHOW_PROGRESS,
         ):
             if policy and addon_details["maxmemory_policy"] != policy:

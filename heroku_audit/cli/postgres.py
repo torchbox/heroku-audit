@@ -1,4 +1,5 @@
 import operator
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated, Optional, TypedDict, cast
 
@@ -13,6 +14,7 @@ from heroku_audit.style import style_backup_schedules
 from heroku_audit.utils import (
     SHOW_PROGRESS,
     get_addon_plan,
+    get_addons,
     get_apps_for_teams,
     zip_map,
 )
@@ -73,22 +75,17 @@ def major_version(
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons: list[Addon] = []
-        for addons in track(
-            executor.map(lambda a: a.addons(), apps),
-            description="Loading addons...",
-            total=len(apps),
-            disable=not SHOW_PROGRESS,
-        ):
-            collected_addons.extend(
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
-            )
+        postgres_addons = [
+            addon
+            for addon in get_addons(executor, apps)
+            if addon.plan.name.startswith(HEROKU_POSTGRES)
+        ]
 
         results = []
         for addon, addon_details in track(
-            zip_map(executor, get_heroku_postgres_details, collected_addons),
+            zip_map(executor, get_heroku_postgres_details, postgres_addons),
             description="Probing databases...",
-            total=len(collected_addons),
+            total=len(postgres_addons),
             disable=not SHOW_PROGRESS,
         ):
             if target and addon_details["postgres_version"].split(".", 1)[0] != str(
@@ -125,20 +122,15 @@ def plan(
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons: list[Addon] = []
-        for addons in track(
-            executor.map(lambda a: a.addons(), apps),
-            description="Loading addons...",
-            total=len(apps),
-            disable=not SHOW_PROGRESS,
-        ):
-            collected_addons.extend(
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
-            )
+        postgres_addons = [
+            addon
+            for addon in get_addons(executor, apps)
+            if addon.plan.name.startswith(HEROKU_POSTGRES)
+        ]
 
     if plan:
-        collected_addons = [
-            addon for addon in collected_addons if get_addon_plan(addon) == plan
+        postgres_addons = [
+            addon for addon in postgres_addons if get_addon_plan(addon) == plan
         ]
 
     display_data(
@@ -150,7 +142,7 @@ def plan(
                     "Attachments": ", ".join(sorted(addon.config_vars)),
                     "Plan": get_addon_plan(addon),
                 }
-                for addon in collected_addons
+                for addon in postgres_addons
             ),
             key=operator.itemgetter("App"),
         ),
@@ -179,17 +171,13 @@ def count(
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        app_to_addons = {}
+        app_to_addons = defaultdict(list)
 
-        for app, addons in track(
-            zip_map(executor, lambda a: a.addons(), apps),
-            description="Loading addons...",
-            total=len(apps),
-            disable=not SHOW_PROGRESS,
-        ):
-            app_to_addons[app] = [
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
-            ]
+        for addon in get_addons(executor, apps):
+            if not addon.plan.name.startswith(HEROKU_POSTGRES):
+                continue
+
+            app_to_addons[addon.app].append(addon)
 
     display_data(
         sorted(
@@ -225,22 +213,17 @@ def backup_schedule(
     with ThreadPoolExecutor() as executor:
         apps = heroku.apps() if team is None else get_apps_for_teams(team)
 
-        collected_addons: list[Addon] = []
-        for addons in track(
-            executor.map(lambda a: a.addons(), apps),
-            description="Loading addons...",
-            total=len(apps),
-            disable=not SHOW_PROGRESS,
-        ):
-            collected_addons.extend(
-                addon for addon in addons if addon.plan.name.startswith(HEROKU_POSTGRES)
-            )
+        postgres_addons = [
+            addon
+            for addon in get_addons(executor, apps)
+            if addon.plan.name.startswith(HEROKU_POSTGRES)
+        ]
 
         results = []
         for addon, backup_schedules in track(
-            zip_map(executor, get_heroku_postgres_backup_schedules, collected_addons),
+            zip_map(executor, get_heroku_postgres_backup_schedules, postgres_addons),
             description="Probing databases...",
-            total=len(collected_addons),
+            total=len(postgres_addons),
             disable=not SHOW_PROGRESS,
         ):
             if missing_only and backup_schedules:
