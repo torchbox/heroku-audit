@@ -10,22 +10,22 @@ from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
 from heroku_audit.style import style_user_role
-from heroku_audit.utils import SHOW_PROGRESS, get_apps_for_teams, zip_map
+from heroku_audit.utils import (
+    SHOW_PROGRESS,
+    get_apps_for_teams,
+    get_team_members,
+    zip_map,
+)
 
 app = typer.Typer(name="users", help="Report on Heroku users.")
-
-COLLABORATOR_ROLES = ["collaborator", None]
 
 
 def get_member_of_team(team_name: str, email: str) -> Optional[Collaborator]:
     return next(
         (
             collaborator
-            for collaborator in heroku._get_resources(  # type:ignore[attr-defined]
-                ("teams", team_name, "members"), obj=Collaborator
-            )
+            for collaborator in get_team_members(team_name)
             if collaborator.user.email == email
-            and collaborator.role not in COLLABORATOR_ROLES
         ),
         None,
     )

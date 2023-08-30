@@ -1,20 +1,27 @@
 import operator
 from concurrent.futures import ThreadPoolExecutor
+from itertools import chain
 from typing import Annotated
 
 import typer
+from heroku3.models.collaborator import Collaborator
 from rich.progress import track
 from rich.text import Text
 
 from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
-from heroku_audit.style import style_dyno_formation_quantity, style_dyno_formation_size
+from heroku_audit.style import (
+    style_dyno_formation_quantity,
+    style_dyno_formation_size,
+    style_user_role,
+)
 from heroku_audit.utils import (
     SHOW_PROGRESS,
     get_addon_plan,
     get_addons,
     get_apps_for_teams,
+    get_team_members,
     zip_map,
 )
 
@@ -98,6 +105,36 @@ def addon(
                 for addon in collected_addons
             ),
             key=operator.itemgetter("App"),
+        ),
+        display_format,
+    )
+
+
+@app.command()
+def access(
+    app_name: Annotated[str, typer.Argument(help="App name to audit")],
+    display_format: FormatOption = Format.TABLE,
+) -> None:
+    # HACK: https://github.com/martyzz1/heroku3.py/pull/133
+    Collaborator._strs.append("role")  # type:ignore
+
+    app = heroku.app(app_name)
+
+    collaborators = app.collaborators()
+
+    team_members = get_team_members(app.team.name)
+
+    display_data(
+        sorted(
+            (
+                {
+                    "User": collaborator.user.email,
+                    "Role": style_user_role(collaborator.role),
+                    "Date Given": collaborator.created_at.date().isoformat(),
+                }
+                for collaborator in set(chain(collaborators, team_members))
+            ),
+            key=operator.itemgetter("User"),
         ),
         display_format,
     )
