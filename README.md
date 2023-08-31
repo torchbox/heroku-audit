@@ -12,7 +12,11 @@ Command-line tool for reporting on specific attributes of a Heroku environment.
 
 ## Installation
 
-- `pip install -e .`
+```
+$ pip install heroku-audit
+```
+
+Alternatively, you can download the pre-compiled binary from the releases.
 
 ## Usage
 
