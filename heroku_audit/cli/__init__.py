@@ -20,7 +20,7 @@ app.add_typer(users.app)
 
 def version_callback(version: bool) -> None:
     if version:
-        print("Version", __version__)
+        print(f"Heroku Audit v{__version__}")
         raise typer.Exit()
 
 
