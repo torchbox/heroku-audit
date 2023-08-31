@@ -56,6 +56,15 @@ jobs:
       with:
         name: heroku-audit-${{ matrix.os }}
         path: dist/
+    - name: Upload to release
+      uses: svenstaro/upload-release-action@v2
+      if: ${{ github.ref_type == 'tag' }}
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: dist/*
+        tag: ${{ github.ref }}
+        file_glob: true
+        overwrite: true
 
   build:
     permissions:
