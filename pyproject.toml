@@ -21,6 +21,11 @@ dependencies = [
     "rich"
 ]
 
+[project.urls]
+Source = "https://github.com/torchbox/heroku-audit"
+Issues = "https://github.com/torchbox/heroku-audit/issues"
+Changelog = "https://github.com/torchbox/heroku-audit/releases"
+
 [project.scripts]
 heroku-audit = "heroku_audit.cli:app"
 
