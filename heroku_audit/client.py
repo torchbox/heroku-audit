@@ -17,7 +17,7 @@ class LazyHerokuWrapper:
 
     _heroku = None
 
-    def __get__(self, obj: Any, objtype: Any = None) -> Heroku:
+    def _get_heroku(self) -> Heroku:
         if self._heroku is None:
             try:
                 self._heroku = heroku3.from_key(os.environ["HEROKU_API_KEY"])
@@ -30,6 +30,9 @@ class LazyHerokuWrapper:
                 )
                 sys.exit(1)
         return self._heroku
+
+    def __getattr__(self, attr_name: str) -> Any:
+        return getattr(self._get_heroku(), attr_name)
 
 
 heroku = cast(Heroku, LazyHerokuWrapper())
