@@ -22,7 +22,7 @@ Alternatively, you can download the pre-compiled binary from the releases.
 
 Note: See `heroku-audit --help` for further details.
 
-Authentication is handled through the `$HEROKU_API_KEY` environment variable, which must be set to a valid Heroku API key.
+Authentication is handled through the `$HEROKU_API_KEY` environment variable, which must be set to a valid Heroku API key. Alternatively, you can create a `heroku-api-key.txt` file in the config directory (`heroku-audit --show-config-dir`).
 
 Each components is its own sub-command, containing a number of pre-made reports. `heroku-audit --list` will list all available commands.
 

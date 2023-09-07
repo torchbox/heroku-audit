@@ -5,6 +5,7 @@ from rich.console import Console
 from typer.rich_utils import _print_commands_panel
 
 from heroku_audit import __version__
+from heroku_audit.config import APP_DIR
 
 from . import apps, env, postgres, redis, users
 
@@ -21,6 +22,12 @@ app.add_typer(users.app)
 def version_callback(version: bool) -> None:
     if version:
         print(f"Heroku Audit v{__version__}")
+        raise typer.Exit()
+
+
+def show_config_dir_callback(should_show_config_dir: bool) -> None:
+    if should_show_config_dir:
+        print(APP_DIR)
         raise typer.Exit()
 
 
@@ -63,6 +70,15 @@ def main(
             is_eager=True,
             help="Show the available reports and then exit.",
             callback=list_callback,
+        ),
+    ] = False,
+    show_config_dir: Annotated[
+        Optional[bool],
+        typer.Option(
+            "--show-config-dir",
+            is_eager=True,
+            help="Show the config directory location.",
+            callback=show_config_dir_callback,
         ),
     ] = False,
 ) -> None:
