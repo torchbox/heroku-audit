@@ -32,8 +32,6 @@ jobs:
       run: ruff check heroku_audit stubs
     - name: List commands
       run: heroku-audit --list
-      env:
-        HEROKU_API_KEY: dummy
 
   exe:
     strategy:
@@ -53,8 +51,6 @@ jobs:
         flit install --deps=production
     - name: Build executable
       run: pyinstaller -F --strip heroku_audit/__main__.py --name heroku-audit --clean
-      env:
-        HEROKU_API_KEY: dummy  # Set a dummy key to let the build import the module successfully
     - name: Get output name
       run: echo "exe_name=$(basename ${{ github.workspace }}/dist/*)" >> $GITHUB_ENV
     - name: Save executable
