@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import Any, cast
 
@@ -5,8 +6,6 @@ import heroku3
 from heroku3.core import Heroku
 from rich import print
 from rich.text import Text
-
-from heroku_audit.config import config_env_default
 
 __all__ = ["heroku"]
 
@@ -20,7 +19,7 @@ class LazyHerokuWrapper:
 
     def _get_heroku(self) -> Heroku:
         if self._heroku is None:
-            api_key = config_env_default("heroku-api-key.txt", "HEROKU_API_KEY")
+            api_key = os.environ.get("HEROKU_API_KEY")
             if api_key is None:
                 print(
                     Text(

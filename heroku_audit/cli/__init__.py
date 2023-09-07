@@ -5,9 +5,11 @@ from rich.console import Console
 from typer.rich_utils import _print_commands_panel
 
 from heroku_audit import __version__
-from heroku_audit.config import APP_DIR
+from heroku_audit.config import APP_DIR, load_env_config
 
 from . import apps, env, postgres, redis, users
+
+load_env_config()
 
 app = typer.Typer(help="Heroku audit tool")
 
