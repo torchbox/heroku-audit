@@ -12,11 +12,24 @@ Command-line tool for reporting on specific attributes of a Heroku environment.
 
 ## Installation
 
+### PyPI
+
 ```
 $ pip install heroku-audit
 ```
 
-Alternatively, you can download the pre-compiled binary from the releases.
+### Homebrew
+
+Buckup can be installed from Torchbox's [Homebrew tap](https://github.com/torchbox/homebrew-tap).
+
+```
+brew tap torchbox/tap
+brew install heroku-audit
+```
+
+### Pre-compiled binaries
+
+You can download the pre-compiled binary from the releases, built with [`pyinstaller`](https://pyinstaller.org/en/stable/).
 
 ## Usage
 
