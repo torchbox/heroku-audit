@@ -50,9 +50,7 @@ jobs:
         python -m pip install --upgrade flit pyinstaller
         flit install --deps=production
     - name: Build executable
-      run: pyinstaller -F --strip heroku_audit/__main__.py --name heroku-audit --clean
-    - name: Get output name
-      run: echo "exe_name=$(basename ${{ github.workspace }}/dist/*)" >> $GITHUB_ENV
+      run: pyinstaller -F --strip heroku_audit/__main__.py --name heroku-audit-${{ matrix.os }} --clean
     - name: Save executable
       uses: actions/upload-artifact@v3
       with:
@@ -63,9 +61,9 @@ jobs:
       if: ${{ github.ref_type == 'tag' }}
       with:
         repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file: dist/${{ env.exe_name }}
-        asset_name: heroku-audit-${{ matrix.os }}
+        file: dist/*
         tag: ${{ github.ref }}
+        file_glob: true
         overwrite: true
 
   build:
