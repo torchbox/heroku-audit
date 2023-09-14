@@ -1,5 +1,11 @@
 # Heroku-audit
 
+[![CI](https://github.com/torchbox/heroku-audit/actions/workflows/ci.yml/badge.svg)](https://github.com/torchbox/heroku-audit/actions/workflows/ci.yml)![PyPI](https://img.shields.io/pypi/v/heroku-audit.svg)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/heroku-audit.svg)
+![PyPI - Wheel](https://img.shields.io/pypi/wheel/heroku-audit.svg)
+![PyPI - Status](https://img.shields.io/pypi/status/heroku-audit.svg)
+![PyPI - License](https://img.shields.io/pypi/l/heroku-audit.svg)
+
 Command-line tool for reporting on specific attributes of a Heroku environment.
 
 ## Components
