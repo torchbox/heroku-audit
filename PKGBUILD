@@ -1,25 +1,33 @@
 # Maintainer: Jake Howard <aur at theorangeone dot net>
 pkgname=heroku-audit
-pkgver=0.0.1
+pkgver=0.0.2
 pkgrel=1
 pkgdesc="Command-line tool for reporting on specific attributes of a Heroku environment."
 url="https://github.com/torchbox/heroku-audit"
 license=('BSD')
 arch=('any')
-depends=()
+depends=(python)
 source=("https://github.com/torchbox/heroku-audit/archive/${pkgver}.tar.gz")
-makedepends=(python-build python-wheel pyinstaller)
-sha256sums=('c840041c7027b1cf902de0ae27887285fdb122baeaa349c0d18dbe9226b5eea8')
+makedepends=(python-build python-wheel)
+sha256sums=('0c539746c4b5dfb1ff8504e1a96394c3456666c866e0f0c1f7f54ef6f1242279')
 
 build() {
   cd "${srcdir}"/${pkgname}-${pkgver}
 
+  # Create a temporary virtualenv to install the build dependencies in
   python -m venv venv
   source venv/bin/activate
 
-  pip install -e .
+  pip install -e . pyinstaller
 
-  pyinstaller -F --strip heroku_audit/__main__.py --name heroku-audit --clean
+  venv/bin/pyinstaller -F --strip heroku_audit/__main__.py --name heroku-audit --clean
+}
+
+check() {
+  cd "${srcdir}"/${pkgname}-${pkgver}
+
+  ./dist/heroku-audit --version > /dev/null
+  ./dist/heroku-audit --list > /dev/null
 }
 
 package() {
