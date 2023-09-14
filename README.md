@@ -21,7 +21,7 @@ Command-line tool for reporting on specific attributes of a Heroku environment.
 ### PyPI
 
 ```
-$ pip install heroku-audit
+pip install heroku-audit
 ```
 
 ### Homebrew
