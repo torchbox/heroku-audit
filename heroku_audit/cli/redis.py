@@ -10,6 +10,7 @@ from rich.progress import track
 from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
+from heroku_audit.style import style_backup_schedules
 from heroku_audit.utils import (
     SHOW_PROGRESS,
     get_addon_plan,
@@ -26,6 +27,7 @@ HEROKU_REDIS = "heroku-redis:"
 class HerokuRedisDetails(TypedDict):
     version: str
     maxmemory_policy: str
+    maintenance_window: Optional[str]
 
 
 def get_heroku_redis_details(addon: Addon) -> dict:
@@ -41,6 +43,7 @@ def get_heroku_redis_details(addon: Addon) -> dict:
     return {
         "version": data["info"]["Version"][0],
         "maxmemory_policy": data["info"]["Maxmemory"][0],
+        "maintenance_window": data["info"].get("Maintenance window", [None])[0],
     }
 
 
@@ -81,7 +84,6 @@ def major_version(
                     "Addon": addon.name,
                     "Plan": get_addon_plan(addon),
                     "Version": addon_details["version"],
-                    "Max Memory Policy": addon_details["maxmemory_policy"],
                 }
             )
 
@@ -222,3 +224,47 @@ def maxmemory_policy(
             )
 
     display_data(sorted(results, key=operator.itemgetter("Policy")), display_format)
+
+
+@app.command()
+def maintenance_window(
+    missing_only: Annotated[
+        Optional[bool],
+        typer.Option(help="Only show instances without maintenance windows"),
+    ] = False,
+    team: TeamOption = None,
+    display_format: FormatOption = Format.TABLE,
+) -> None:
+    """
+    Audit the maintenance window of redis databases
+    """
+    with ThreadPoolExecutor() as executor:
+        apps = heroku.apps() if team is None else get_apps_for_teams(team)
+
+        redis_addons = [
+            addon
+            for addon in get_addons(executor, apps)
+            if addon.plan.name.startswith(HEROKU_REDIS)
+        ]
+
+        results = []
+        for addon, addon_details in track(
+            zip_map(executor, get_heroku_redis_details, redis_addons),
+            description="Probing databases...",
+            total=len(redis_addons),
+            disable=not SHOW_PROGRESS,
+        ):
+            if missing_only and addon_details["maintenance_window"]:
+                continue
+            results.append(
+                {
+                    "App": addon.app.name,
+                    "Addon": addon.name,
+                    "Plan": get_addon_plan(addon),
+                    "Maintenance_window": style_backup_schedules(
+                        addon_details["maintenance_window"]
+                    ),
+                }
+            )
+
+    display_data(sorted(results, key=operator.itemgetter("App")), display_format)

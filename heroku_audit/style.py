@@ -34,3 +34,9 @@ def style_backup_schedules(schedules: list["HerokuBackupSchedule"]) -> Renderabl
         return Text("None", style="red")
 
     return ", ".join(f"Daily at {s['hour']}:00 {s['timezone']}" for s in schedules)
+
+
+def style_maintenance_window(maintenance_window: Optional[str]) -> RenderableType:
+    if maintenance_window is None:
+        return Text("None", style="red")
+    return maintenance_window

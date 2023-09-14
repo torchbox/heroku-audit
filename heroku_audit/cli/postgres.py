@@ -10,7 +10,7 @@ from rich.progress import track
 from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
-from heroku_audit.style import style_backup_schedules
+from heroku_audit.style import style_backup_schedules, style_maintenance_window
 from heroku_audit.utils import (
     SHOW_PROGRESS,
     get_addon_plan,
@@ -32,6 +32,7 @@ def get_postgres_api_hostname(addon: Addon) -> str:
 
 class HerokuPostgresDetails(TypedDict):
     postgres_version: str
+    maintenance_window: Optional[str]
 
 
 class HerokuBackupSchedule(TypedDict):
@@ -48,7 +49,10 @@ def get_heroku_postgres_details(addon: Addon) -> HerokuPostgresDetails:
     # Reshape for easier parsing
     data["info"] = {i["name"]: i["values"] for i in data["info"]}
 
-    return {"postgres_version": data["info"]["PG Version"][0]}
+    return {
+        "postgres_version": data["info"]["PG Version"][0],
+        "maintenance_window": data["info"].get("Maintenance window", [None])[0],
+    }
 
 
 def get_heroku_postgres_backup_schedules(addon: Addon) -> list[HerokuBackupSchedule]:
@@ -235,6 +239,51 @@ def backup_schedule(
                     "Addon": addon.name,
                     "Plan": get_addon_plan(addon),
                     "Schedule": style_backup_schedules(backup_schedules),
+                }
+            )
+
+    display_data(sorted(results, key=operator.itemgetter("App")), display_format)
+
+
+@app.command()
+def maintenance_window(
+    missing_only: Annotated[
+        Optional[bool],
+        typer.Option(help="Only show databases without maintenance windows"),
+    ] = False,
+    team: TeamOption = None,
+    display_format: FormatOption = Format.TABLE,
+) -> None:
+    """
+    Audit the maintenance windows for postgres
+    """
+    with ThreadPoolExecutor() as executor:
+        apps = heroku.apps() if team is None else get_apps_for_teams(team)
+
+        postgres_addons = [
+            addon
+            for addon in get_addons(executor, apps)
+            if addon.plan.name.startswith(HEROKU_POSTGRES)
+        ]
+
+        results = []
+        for addon, addon_details in track(
+            zip_map(executor, get_heroku_postgres_details, postgres_addons),
+            description="Probing databases...",
+            total=len(postgres_addons),
+            disable=not SHOW_PROGRESS,
+        ):
+            if missing_only and addon_details["maintenance_window"]:
+                continue
+
+            results.append(
+                {
+                    "App": addon.app.name,
+                    "Addon": addon.name,
+                    "Plan": get_addon_plan(addon),
+                    "Maintenance window": style_maintenance_window(
+                        addon_details["maintenance_window"]
+                    ),
                 }
             )
 
