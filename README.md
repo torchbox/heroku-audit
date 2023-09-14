@@ -33,6 +33,14 @@ brew tap torchbox/tap
 brew install heroku-audit
 ```
 
+### Arch Linux
+
+Arch users can install [`heroku-audit`](https://aur.archlinux.org/packages/heroku-audit) from the AUR.
+
+```
+paru -S heroku-audit
+```
+
 ### Pre-compiled binaries
 
 You can download the pre-compiled binary from the releases, built with [`pyinstaller`](https://pyinstaller.org/en/stable/).
