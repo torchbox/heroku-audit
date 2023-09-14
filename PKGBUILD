@@ -20,7 +20,7 @@ build() {
 
   pip install -e . pyinstaller
 
-  venv/bin/pyinstaller -D --strip heroku_audit/__main__.py --name heroku-audit --clean
+  venv/bin/pyinstaller -D --strip heroku_audit/__main__.py --name heroku-audit --clean --noconfirm
 }
 
 check() {
