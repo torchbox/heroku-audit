@@ -20,20 +20,24 @@ build() {
 
   pip install -e . pyinstaller
 
-  venv/bin/pyinstaller -F --strip heroku_audit/__main__.py --name heroku-audit --clean
+  venv/bin/pyinstaller -D --strip heroku_audit/__main__.py --name heroku-audit --clean
 }
 
 check() {
   cd "${srcdir}"/${pkgname}-${pkgver}
 
-  ./dist/heroku-audit --version > /dev/null
-  ./dist/heroku-audit --list > /dev/null
+  ./dist/heroku-audit/heroku-audit --version > /dev/null
+  ./dist/heroku-audit/heroku-audit --list > /dev/null
 }
 
 package() {
   cd "${srcdir}"/${pkgname}-${pkgver}
 
-  install -Dm755 dist/heroku-audit "${pkgdir}"/usr/bin/heroku-audit
+  mkdir -p "${pkgdir}"/opt
+  cp -r dist/heroku-audit "${pkgdir}"/opt/heroku-audit
+
+  mkdir -p "${pkgdir}"/usr/bin/
+  ln -s /opt/heroku-audit/heroku-audit "${pkgdir}"/usr/bin/
 
   install -Dm644 README.md "${pkgdir}"/usr/share/doc/${pkgname}/README.md
   install -Dm644 LICENSE "${pkgdir}"/usr/share/licenses/${pkgname}/LICENSE
