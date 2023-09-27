@@ -26,7 +26,7 @@ pip install heroku-audit
 
 ### Homebrew
 
-Buckup can be installed from Torchbox's [Homebrew tap](https://github.com/torchbox/homebrew-tap).
+Heroku Audit can be installed from Torchbox's [Homebrew tap](https://github.com/torchbox/homebrew-tap).
 
 ```
 brew tap torchbox/tap
