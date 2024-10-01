@@ -26,12 +26,17 @@ class Format(str, Enum):
     TABLE = "table"
     CSV = "csv"
     JSON = "json"
+    COUNT = "count"
 
 
 FormatOption = Annotated[Format, typer.Option("--format")]
 
 
 def display_data(data: list[dict], display_format: Format) -> None:
+    if display_format == Format.COUNT:
+        print(len(data))
+        return
+
     if not data:
         return
 

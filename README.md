@@ -62,5 +62,6 @@ By default, a pretty table is output, for easy consumption by humans. `--format`
 - `table` (Default)
 - `csv`
 - `json`
+- `count`
 
 Progress output is automatically removed when running non-interactively.
