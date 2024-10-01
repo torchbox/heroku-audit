@@ -44,9 +44,13 @@ def list_callback(should_list: bool) -> None:
                 # Prefix command name
                 command.name = f"{group_name} {command.name}"
                 commands.append(command)
-
+        max_cmd_len = max((len(command.name or "") for command in commands), default=0)
         _print_commands_panel(
-            name="Commands", commands=commands, markup_mode="rich", console=Console()
+            name="Commands",
+            commands=commands,
+            markup_mode="rich",
+            console=Console(),
+            cmd_len=max_cmd_len,
         )
 
         raise typer.Exit()
