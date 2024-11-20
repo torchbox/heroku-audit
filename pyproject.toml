@@ -13,7 +13,7 @@ readme = "README.md"
 classifiers = [
     "License :: OSI Approved",
     "License :: OSI Approved :: BSD License",
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Topic :: Utilities",
     "Topic :: System :: Systems Administration",
