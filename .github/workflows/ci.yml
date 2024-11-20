@@ -29,7 +29,7 @@ jobs:
     - name: Type check
       run: mypy heroku_audit stubs
     - name: Format
-      run: black --check heroku_audit stubs
+      run: ruff format --check .
     - name: lint
       run: ruff check heroku_audit stubs
     - name: List commands

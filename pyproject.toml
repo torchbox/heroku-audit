@@ -48,9 +48,8 @@ heroku-audit = "heroku_audit.cli:app"
 
 [project.optional-dependencies]
 dev = [
-    "ruff",
-    "mypy",
-    "black",
+    "ruff==0.7.4",
+    "mypy==1.13.0",
     "types-requests"
 ]
 
@@ -68,6 +67,6 @@ disallow_incomplete_defs = true
 disallow_untyped_decorators = true
 check_untyped_defs = true
 
-[tool.ruff]
+[tool.ruff.lint]
 select = ["E", "F", "I", "W", "N", "B", "A", "C4"]
 ignore = ["E501"]
