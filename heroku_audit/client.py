@@ -3,8 +3,8 @@ import sys
 from typing import Any, cast
 
 import heroku3
+import rich
 from heroku3.core import Heroku
-from rich import print
 from rich.text import Text
 
 __all__ = ["heroku"]
@@ -21,7 +21,7 @@ class LazyHerokuWrapper:
         if self._heroku is None:
             api_key = os.environ.get("HEROKU_API_KEY")
             if api_key is None:
-                print(
+                rich.print(
                     Text(
                         "Please set $HEROKU_API_KEY to a valid Heroku API key.",
                         style="red",

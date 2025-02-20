@@ -4,8 +4,8 @@ from enum import Enum
 from io import StringIO
 from typing import Annotated, Any
 
+import rich
 import typer
-from rich.console import Console
 from rich.protocol import is_renderable
 from rich.table import Table
 
@@ -46,7 +46,7 @@ def display_data(data: list[dict], display_format: Format) -> None:
         for row in data:
             values = [v if is_renderable(v) else str(v) for v in row.values()]
             table.add_row(*values)
-        Console().print(table)
+        rich.print(table)
 
     elif display_format == Format.CSV:
         headers = data[0].keys()
