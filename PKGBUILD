@@ -6,39 +6,18 @@ pkgdesc="Command-line tool for reporting on specific attributes of a Heroku envi
 url="https://github.com/torchbox/heroku-audit"
 license=('BSD')
 arch=('x86_64')
-depends=(zlib readline xz openssl glibc expat bzip2 libffi util-linux-libs ncurses mpdecimal)
-source=("https://github.com/torchbox/heroku-audit/archive/${pkgver}.tar.gz")
-makedepends=(python-build python-wheel)
-sha256sums=('69514c421d3d626db8a9f6ddb7441ba49cb3c970855e5a865488ed1a5adacc49')
+source=("https://github.com/torchbox/heroku-audit/releases/download/${pkgver}/heroku-audit-ubuntu-latest")
+sha256sums=('26444e7b19a448e5bf548f9845000516095d4a8b5725a4f0fbd03162c541af9c')
 
 build() {
-  cd "${srcdir}"/${pkgname}-${pkgver}
-
-  # Create a temporary virtualenv to install the build dependencies in
-  python -m venv venv
-  source venv/bin/activate
-
-  pip install -e . pyinstaller
-
-  venv/bin/pyinstaller -D --strip heroku_audit/__main__.py --name heroku-audit --clean --noconfirm
+  chmod +x "${srcdir}"/heroku-audit-ubuntu-latest
 }
 
 check() {
-  cd "${srcdir}"/${pkgname}-${pkgver}
-
-  ./dist/heroku-audit/heroku-audit --version > /dev/null
-  ./dist/heroku-audit/heroku-audit --list > /dev/null
+  "${srcdir}"/heroku-audit-ubuntu-latest --version > /dev/null
+  "${srcdir}"/heroku-audit-ubuntu-latest --list > /dev/null
 }
 
 package() {
-  cd "${srcdir}"/${pkgname}-${pkgver}
-
-  mkdir -p "${pkgdir}"/opt
-  cp -r dist/heroku-audit "${pkgdir}"/opt/heroku-audit
-
-  mkdir -p "${pkgdir}"/usr/bin/
-  ln -s /opt/heroku-audit/heroku-audit "${pkgdir}"/usr/bin/
-
-  install -Dm644 README.md "${pkgdir}"/usr/share/doc/${pkgname}/README.md
-  install -Dm644 LICENSE "${pkgdir}"/usr/share/licenses/${pkgname}/LICENSE
+  install -D "${srcdir}"/heroku-audit-ubuntu-latest "$pkgdir"/usr/bin/heroku-audit
 }
