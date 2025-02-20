@@ -7,7 +7,7 @@ from typer.rich_utils import _print_commands_panel
 from heroku_audit import __version__
 from heroku_audit.config import APP_DIR, load_env_config
 
-from . import apps, env, postgres, redis, users
+from . import apps, domains, env, postgres, redis, users
 
 load_env_config()
 
@@ -19,6 +19,7 @@ app.add_typer(env.app)
 app.add_typer(postgres.app)
 app.add_typer(redis.app)
 app.add_typer(users.app)
+app.add_typer(domains.app)
 
 
 def version_callback(version: bool) -> None:

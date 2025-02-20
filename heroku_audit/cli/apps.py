@@ -12,8 +12,10 @@ from heroku_audit.client import heroku
 from heroku_audit.format import Format, FormatOption, display_data
 from heroku_audit.options import TeamOption
 from heroku_audit.style import (
+    style_acm_status,
     style_dyno_formation_quantity,
     style_dyno_formation_size,
+    style_hostname,
     style_user_role,
 )
 from heroku_audit.utils import (
@@ -135,6 +137,29 @@ def access(
                 for collaborator in set(chain(collaborators, team_members))
             ),
             key=operator.itemgetter("User"),
+        ),
+        display_format,
+    )
+
+
+@app.command()
+def domains(
+    app_name: Annotated[str, typer.Argument(help="App name to audit")],
+    display_format: FormatOption = Format.TABLE,
+) -> None:
+    app = heroku.app(app_name)
+
+    display_data(
+        sorted(
+            (
+                {
+                    "Domain": style_hostname(domain.hostname),
+                    "CNAME": domain.cname if domain.cname is not None else "",
+                    "ACM Status": style_acm_status(domain.acm_status),
+                }
+                for domain in app.domains()
+            ),
+            key=lambda d: d["Domain"].plain,
         ),
         display_format,
     )

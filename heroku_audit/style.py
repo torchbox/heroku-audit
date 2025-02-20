@@ -40,3 +40,19 @@ def style_maintenance_window(maintenance_window: Optional[str]) -> RenderableTyp
     if maintenance_window is None:
         return Text("None", style="red")
     return maintenance_window
+
+
+def style_acm_status(acm_status: Optional[str]) -> RenderableType:
+    if acm_status is None:
+        return ""
+    if acm_status == "cert issued":
+        return Text("Cert issued", style="green")
+    elif acm_status == "failed":
+        return Text("Failed", style="red")
+    return acm_status
+
+
+def style_hostname(hostname: str) -> RenderableType:
+    if hostname.endswith("herokuapp.com"):
+        return Text(hostname, style="purple")
+    return Text(hostname)
