@@ -15,6 +15,7 @@ Command-line tool for reporting on specific attributes of a Heroku environment.
 - Environment Variables
 - Heroku Postgres
 - Heroku Data for Redis
+- Domains
 
 ## Installation
 
