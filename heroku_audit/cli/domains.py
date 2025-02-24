@@ -16,7 +16,7 @@ app = typer.Typer(name="domains", help="Report on domains.")
 
 @app.command()
 def matches(
-    pattern: Annotated[str, typer.Argument(help="Variable to audit")],
+    pattern: Annotated[str, typer.Argument(help="Domain glob to search for")],
     team: TeamOption = None,
     display_format: FormatOption = Format.TABLE,
 ) -> None:
